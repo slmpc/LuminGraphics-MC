@@ -1,0 +1,151 @@
+plugins {
+    id 'java'
+    alias(libs.plugins.loom) apply false
+    alias(libs.plugins.moddev) apply false
+}
+
+group = providers.gradleProperty('group').get()
+version = providers.gradleProperty('version').get()
+
+allprojects {
+    group = rootProject.group
+    version = rootProject.version
+}
+
+subprojects {
+    repositories {
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = 'isolatedLuminChain'
+                    url = uri(System.getProperty('maven.repo.local', rootProject.file('.missing-m2').absolutePath))
+                    metadataSources { mavenPom(); gradleMetadata(); artifact() }
+                }
+            }
+            filter {
+                includeGroup('com.github.slmpc.lumingraphics')
+                includeGroup('com.github.slmpc.prismrhi')
+            }
+        }
+    }
+    plugins.withId('java') {
+        java {
+            toolchain { languageVersion = JavaLanguageVersion.of(25) }
+            withSourcesJar()
+        }
+        tasks.withType(JavaCompile).configureEach {
+            options.release = 25
+            options.encoding = 'UTF-8'
+        }
+    }
+}
+
+dependencies {
+    testImplementation libs.junit
+    testImplementation gradleTestKit()
+    testRuntimeOnly libs.junit.launcher
+}
+
+def neoform2612 = configurations.create('neoform2612') {
+    canBeConsumed = false
+    canBeResolved = true
+    transitive = false
+}
+def neoform262 = configurations.create('neoform262') {
+    canBeConsumed = false
+    canBeResolved = true
+    transitive = false
+}
+dependencies {
+    add('neoform2612', 'net.neoforged:neoform:26.1.2-1@zip')
+    add('neoform262', 'net.neoforged:neoform:26.2-2@zip')
+}
+
+test {
+    useJUnitPlatform()
+    ['baseline.26.1.2', 'baseline.26.2', 'baseline.root.26.1.2', 'baseline.root.26.2'].each { propertyName ->
+        def value = System.getProperty(propertyName)
+        if (value != null) {
+            systemProperty propertyName, value
+        }
+        inputs.property propertyName, value ?: '<default>'
+    }
+    systemProperty 'maven.repo.local', System.getProperty('maven.repo.local', '')
+}
+
+def registerGeneratedBaseline = { String suffix, String minecraftVersion, String neoformVersion,
+                                  String originSha, Configuration originConfiguration ->
+    def outputDir = layout.buildDirectory.dir("generated-baselines/${minecraftVersion}")
+    def loomSources = fileTree(layout.projectDirectory.dir('.gradle/loom-cache/minecraftMaven')) {
+        include "**/${minecraftVersion}/*-${minecraftVersion}-sources.jar"
+    }
+    def moddevSources = layout.projectDirectory.file(
+            "mc-${minecraftVersion}-common/build/moddev/artifacts/vanilla-${neoformVersion}-sources.jar")
+    def generateTask = tasks.register("generate${suffix}Baseline", JavaExec) {
+        group = 'minecraft matrix'
+        description = "Materializes independently generated Loom and ModDev sources for Minecraft ${minecraftVersion}."
+        dependsOn classes, ":mc-${minecraftVersion}-fabric:genSources",
+                ":mc-${minecraftVersion}-common:createMinecraftArtifacts"
+        inputs.files loomSources, moddevSources, originConfiguration
+        outputs.dir outputDir
+        classpath = sourceSets.main.runtimeClasspath
+        mainClass = 'com.github.slmpc.lumingraphics.mc.baseline.GeneratedBaselineTool'
+        doFirst {
+            def matches = loomSources.files.findAll { it.isFile() }
+            if (matches.size() != 1) {
+                throw new GradleException("Expected one Loom ${minecraftVersion} sources JAR, found ${matches.size()}: ${matches}")
+            }
+            delete outputDir
+            setArgs(['generate', minecraftVersion, libs.versions.loom.get(), libs.versions.moddev.get(),
+                    "net.neoforged:neoform:${neoformVersion}@zip",
+                    "https://maven.neoforged.net/releases/net/neoforged/neoform/${neoformVersion}/neoform-${neoformVersion}.zip",
+                    originConfiguration.singleFile, originSha, matches.first(), moddevSources.asFile, outputDir.get().asFile])
+        }
+    }
+    def verifyTask = tasks.register("verify${suffix}Baseline", JavaExec) {
+        group = 'verification'
+        dependsOn classes, generateTask
+        inputs.dir outputDir
+        inputs.dir layout.projectDirectory.dir("reference/vanilla-${minecraftVersion}")
+        classpath = sourceSets.main.runtimeClasspath
+        mainClass = 'com.github.slmpc.lumingraphics.mc.baseline.GeneratedBaselineTool'
+        args 'verify', outputDir.get().asFile, file("reference/vanilla-${minecraftVersion}")
+    }
+    [generateTask, verifyTask]
+}
+
+def baseline2612 = registerGeneratedBaseline('2612', '26.1.2', '26.1.2-1',
+        '3eb9f8cc282badfbc210a27a8304f14cc58fa40401a94072874dfaded3c8cb52', neoform2612)
+def baseline262 = registerGeneratedBaseline('262', '26.2', '26.2-2',
+        '09fd01e2371a94c78bc4d0d28645ab88206fcef395795182cee841765ebd5a63', neoform262)
+
+tasks.register('downloadMinecraftSources') {
+    group = 'minecraft matrix'
+    description = 'Runs Loom and ModDev source production for both supported Minecraft baselines.'
+    dependsOn baseline2612[0], baseline262[0]
+}
+
+tasks.register('verifyMinecraftSources') {
+    group = 'verification'
+    description = 'Parses and verifies selected Mojang source baselines and their SHA-256 manifests.'
+    dependsOn test, 'verifyWrapperChecksum', baseline2612[1], baseline262[1]
+}
+
+tasks.register('verifyWrapperChecksum') {
+    inputs.files 'gradle/wrapper/gradle-wrapper.jar', 'gradle/wrapper/gradle-wrapper.jar.sha256'
+    doLast {
+        def expected = file('gradle/wrapper/gradle-wrapper.jar.sha256').text.trim()
+        def digest = java.security.MessageDigest.getInstance('SHA-256')
+        def actual = digest.digest(file('gradle/wrapper/gradle-wrapper.jar').bytes).encodeHex().toString()
+        if (actual != expected) {
+            throw new GradleException("Gradle wrapper JAR checksum mismatch: expected ${expected}, got ${actual}")
+        }
+    }
+}
+
+tasks.register('buildAllVariants') {
+    group = 'build'
+    description = 'Checks all six loader/version variants without combining loader plugins in one project.'
+    dependsOn ':mc-26.1.2-common:check', ':mc-26.1.2-fabric:check', ':mc-26.1.2-neoforge:check'
+    dependsOn ':mc-26.2-common:check', ':mc-26.2-fabric:check', ':mc-26.2-neoforge:check'
+}

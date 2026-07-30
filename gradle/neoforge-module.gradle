@@ -1,0 +1,7 @@
+apply plugin: 'java-library'
+apply plugin: 'net.neoforged.moddev'
+
+def commonProject = project(":${project.name.replace('-neoforge', '-common')}")
+dependencies {
+    implementation commonProject
+}

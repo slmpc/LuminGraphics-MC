@@ -1,0 +1,36 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven { url = uri('https://maven.fabricmc.net') }
+        maven { url = uri('https://maven.neoforged.net/releases') }
+        mavenCentral()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
+    repositories {
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = 'isolatedLuminChain'
+                    url = uri(System.getProperty('maven.repo.local', layout.settingsDirectory.dir('.missing-m2').asFile.absolutePath))
+                    metadataSources { mavenPom(); gradleMetadata(); artifact() }
+                }
+            }
+            filter {
+                includeGroup('com.github.slmpc.lumingraphics')
+                includeGroup('com.github.slmpc.prismrhi')
+            }
+        }
+        mavenCentral()
+        maven { url = uri('https://libraries.minecraft.net') }
+        maven { url = uri('https://maven.fabricmc.net') }
+        maven { url = uri('https://maven.neoforged.net/releases') }
+    }
+}
+
+rootProject.name = 'LuminGraphics-MC'
+include 'bridge-contract'
+include 'mc-26.1.2-common', 'mc-26.1.2-fabric', 'mc-26.1.2-neoforge'
+include 'mc-26.2-common', 'mc-26.2-fabric', 'mc-26.2-neoforge'

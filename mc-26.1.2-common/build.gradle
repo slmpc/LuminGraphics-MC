@@ -1,0 +1,2 @@
+apply from: rootProject.file('gradle/common-module.gradle')
+neoForge { neoFormVersion = '26.1.2-1' }

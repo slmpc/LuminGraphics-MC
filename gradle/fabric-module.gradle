@@ -1,0 +1,7 @@
+apply plugin: 'java-library'
+apply plugin: 'net.fabricmc.fabric-loom'
+
+def commonProject = project(":${project.name.replace('-fabric', '-common')}")
+dependencies {
+    implementation commonProject
+}
