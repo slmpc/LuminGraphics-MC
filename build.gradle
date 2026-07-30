@@ -41,6 +41,8 @@ subprojects {
 }
 
 dependencies {
+    implementation 'com.google.code.gson:gson:2.13.2'
+    implementation 'org.tomlj:tomlj:1.1.1'
     testImplementation libs.junit
     testImplementation gradleTestKit()
     testRuntimeOnly libs.junit.launcher
@@ -143,9 +145,36 @@ tasks.register('verifyWrapperChecksum') {
     }
 }
 
+def loaderVariants = [
+        ':mc-26.1.2-fabric', ':mc-26.1.2-neoforge',
+        ':mc-26.2-fabric', ':mc-26.2-neoforge'
+]
+
+tasks.register('verifyVariantJars', JavaExec) {
+    group = 'verification'
+    description = 'Recursively verifies the four self-contained loader artifacts and their isolated provenance.'
+    dependsOn classes
+    loaderVariants.each { variant -> dependsOn "${variant}:jar" }
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.github.slmpc.lumingraphics.mc.packaging.VariantJarVerifier'
+    doFirst {
+        def arguments = [layout.projectDirectory.asFile, System.getProperty('maven.repo.local', '')]
+        def overrideDirectory = providers.gradleProperty('variantJarOverride').orNull
+        if (overrideDirectory != null) arguments.add(file(overrideDirectory))
+        setArgs(arguments)
+    }
+}
+
 tasks.register('buildAllVariants') {
     group = 'build'
-    description = 'Checks all six loader/version variants without combining loader plugins in one project.'
+    description = 'Builds and verifies all six modules and four final dependency-mod artifacts.'
     dependsOn ':mc-26.1.2-common:check', ':mc-26.1.2-fabric:check', ':mc-26.1.2-neoforge:check'
     dependsOn ':mc-26.2-common:check', ':mc-26.2-fabric:check', ':mc-26.2-neoforge:check'
+    loaderVariants.each { variant ->
+        dependsOn "${variant}:clean", "${variant}:build"
+        project(variant).tasks.configureEach { task ->
+            if (task.name != 'clean') task.mustRunAfter project(variant).tasks.named('clean')
+        }
+    }
+    dependsOn 'verifyVariantJars'
 }

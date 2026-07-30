@@ -12,9 +12,35 @@ def entrypointClass = "com.github.slmpc.lumingraphics.mc.${packageKey}.neoforge.
 def mixinConfigName = minecraftVersion == '26.1.2' ?
         'lumin_graphics_mc_2612.mixins.json' : 'lumin-graphics-mc-262.mixins.json'
 def accessTransformer = layout.projectDirectory.file('src/main/resources/META-INF/accesstransformer.cfg')
+def packagedLibraries = [
+        'com.github.slmpc.lumingraphics:lumin-graphics-core:0.1.0',
+        'com.github.slmpc.lumingraphics:lumin-graphics-render:0.1.0',
+        'com.github.slmpc.lumingraphics:lumin-graphics-text:0.1.0',
+        'com.github.slmpc.lumingraphics:lumin-graphics-ui:0.1.0',
+        'com.github.slmpc.prismrhi:prism-rhi-core:0.1.0',
+        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-common:0.1.0',
+        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:0.1.0',
+        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:0.1.0'
+]
+
+base {
+    archivesName = "lumin-graphics-mc-neoforge-${minecraftVersion}"
+}
+
+def variantPackaging = configurations.create('variantPackaging') {
+    canBeConsumed = false
+    canBeResolved = true
+    transitive = false
+}
 
 dependencies {
     implementation commonProject
+    packagedLibraries.each { coordinate ->
+        add(variantPackaging.name, coordinate) { transitive = false }
+        add('jarJar', coordinate.replace(':0.1.0', ':[0.1.0]')) {
+            transitive = false
+        }
+    }
 }
 
 neoForge {
@@ -143,7 +169,9 @@ def verifyNeoForgeContract = tasks.register('verifyNeoForgeContract') {
         if (majorVersion != 69) {
             throw new GradleException("NeoForge ${minecraftVersion} entrypoint is not Java 25 bytecode: ${majorVersion}")
         }
-        def runtimeLoader = new URLClassLoader(sourceSets.main.runtimeClasspath.files.collect { it.toURI().toURL() } as URL[],
+        def outputJar = tasks.named('jar').get().archiveFile.get().asFile
+        def runtimeLoader = new URLClassLoader(([outputJar] + sourceSets.main.runtimeClasspath.files)
+                .collect { it.toURI().toURL() } as URL[],
                 ClassLoader.getPlatformClassLoader())
         try {
             Class.forName(entrypointClass, false, runtimeLoader)
@@ -170,7 +198,6 @@ def verifyNeoForgeContract = tasks.register('verifyNeoForgeContract') {
             throw new GradleException("Cross-version accessor leakage in ${project.path}: ${crossVersionSources}")
         }
 
-        def outputJar = tasks.named('jar').get().archiveFile.get().asFile
         def zip = new java.util.zip.ZipFile(outputJar)
         try {
             def entries = zip.entries().collect { it.name } as Set

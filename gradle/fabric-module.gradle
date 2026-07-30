@@ -15,6 +15,33 @@ def expectedApi = minecraftVersion == '26.1.2' ? '0.150.0+26.1.2' : '0.156.0+26.
 def mixinName = minecraftVersion == '26.1.2' ?
         'lumin_graphics_mc_2612.mixins.json' : 'lumin-graphics-mc-262.mixins.json'
 def accessWidenerName = "lumin_graphics_mc_${versionKey}.accesswidener"
+def packagedLibraries = [
+        'com.github.slmpc.lumingraphics:lumin-graphics-core:0.1.0',
+        'com.github.slmpc.lumingraphics:lumin-graphics-render:0.1.0',
+        'com.github.slmpc.lumingraphics:lumin-graphics-text:0.1.0',
+        'com.github.slmpc.lumingraphics:lumin-graphics-ui:0.1.0',
+        'com.github.slmpc.prismrhi:prism-rhi-core:0.1.0',
+        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-common:0.1.0',
+        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:0.1.0',
+        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:0.1.0'
+]
+
+base {
+    archivesName = "lumin-graphics-mc-fabric-${minecraftVersion}"
+}
+
+def variantPackaging = configurations.create('variantPackaging') {
+    canBeConsumed = false
+    canBeResolved = true
+    transitive = false
+}
+
+dependencies {
+    packagedLibraries.each { coordinate ->
+        add(variantPackaging.name, coordinate) { transitive = false }
+        add('include', coordinate) { transitive = false }
+    }
+}
 
 sourceSets {
     main {
