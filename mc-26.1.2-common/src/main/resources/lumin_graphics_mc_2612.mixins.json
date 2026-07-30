@@ -1,17 +1,17 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "com.github.slmpc.lumingraphics.mc.v2612",
+  "package": "com.github.slmpc.lumingraphics.mc.v2612.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "access.GlAccess2612$Texture",
-    "access.GlAccess2612$TextureView",
-    "access.GlAccess2612$Buffer",
-    "access.GlAccess2612$Shader",
-    "mixin.GlBufferBorrowedMixin",
-    "mixin.GlTextureBorrowedMixin",
-    "mixin.GlShaderModuleBorrowedMixin",
-    "mixin.GlProgramBorrowedMixin"
+    "GlAccess2612$Texture",
+    "GlAccess2612$TextureView",
+    "GlAccess2612$Buffer",
+    "GlAccess2612$Shader",
+    "GlBufferBorrowedMixin",
+    "GlTextureBorrowedMixin",
+    "GlShaderModuleBorrowedMixin",
+    "GlProgramBorrowedMixin"
   ],
   "injectors": { "defaultRequire": 1 }
 }

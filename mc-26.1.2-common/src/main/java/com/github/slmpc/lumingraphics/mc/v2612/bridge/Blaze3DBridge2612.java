@@ -4,7 +4,7 @@ import com.github.slmpc.lumingraphics.mc.bridge.BridgeResult;
 import com.github.slmpc.lumingraphics.mc.bridge.BridgeUnsupportedDetail;
 import com.github.slmpc.lumingraphics.mc.bridge.BridgeUnsupportedReason;
 import com.github.slmpc.lumingraphics.mc.v2612.access.BorrowedBlazeResource2612;
-import com.github.slmpc.lumingraphics.mc.v2612.access.GlAccess2612;
+import com.github.slmpc.lumingraphics.mc.v2612.mixin.GlAccess2612;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlAdoptedResource;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlBufferAdoption;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlExternalDevice;

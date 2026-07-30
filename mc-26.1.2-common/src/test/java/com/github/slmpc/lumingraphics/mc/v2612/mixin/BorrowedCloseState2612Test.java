@@ -1,5 +1,7 @@
 package com.github.slmpc.lumingraphics.mc.v2612.mixin;
 
+import com.github.slmpc.lumingraphics.mc.v2612.access.BorrowedCloseState2612;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;

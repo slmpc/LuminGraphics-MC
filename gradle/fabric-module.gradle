@@ -6,6 +6,8 @@ import groovy.json.JsonSlurper
 def commonProject = project(":${project.name.replace('-fabric', '-common')}")
 dependencies {
     implementation commonProject
+    implementation 'com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:0.1.0'
+    implementation 'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:0.1.0'
 }
 
 def minecraftVersion = project.name.replaceFirst('^mc-', '').replaceFirst('-fabric$', '')
@@ -158,3 +160,27 @@ def verifyFabricArtifact = tasks.register('verifyFabricArtifact') {
 }
 
 tasks.named('check') { dependsOn 'verifyFabricWiring', verifyFabricArtifact }
+
+def todo22TaskNames = gradle.startParameter.taskNames.collect { it.tokenize(':').last() }
+if (todo22TaskNames.any { it in ['runAllBridgeSmokes', 'runAllBridgeNegativeSmokes'] }) {
+    def negative = todo22TaskNames.contains('runAllBridgeNegativeSmokes')
+    def negativeModes = [
+            'mc-26.1.2-fabric': 'wrong-thread',
+            'mc-26.2-fabric': 'wrong-context'
+    ]
+    def evidenceDir = System.getenv('LUMIN_MC_SMOKE_EVIDENCE_DIR') ?:
+            'D:/Dev/ChenMeng/LuminGraphics/.omo/start-work/attempts/lumin-graphics-prism-rhi-migration-20260730/todo22-smokes'
+    def smokeRunDir = layout.buildDirectory.dir("todo22-run-${negative ? 'negative' : 'positive'}")
+    tasks.named('runClient').configure {
+        def smokeOutput = new File(evidenceDir, "${project.name}-${negative ? 'negative' : 'positive'}.json")
+        environment 'LUMIN_MC_SMOKE_MODE', negative ? negativeModes[project.name] : 'positive'
+        environment 'LUMIN_MC_SMOKE_OUTPUT', smokeOutput.absolutePath
+        doFirst {
+            delete smokeOutput
+            if (!negative) delete new File(smokeOutput.parentFile, smokeOutput.name.replace('.json', '.png'))
+            delete smokeRunDir
+            workingDir smokeRunDir.get().asFile
+        }
+        doLast { delete smokeRunDir }
+    }
+}

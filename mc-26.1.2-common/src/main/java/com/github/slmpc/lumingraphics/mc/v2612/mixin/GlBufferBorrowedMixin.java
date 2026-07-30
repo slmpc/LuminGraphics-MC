@@ -1,5 +1,7 @@
 package com.github.slmpc.lumingraphics.mc.v2612.mixin;
 
+import com.github.slmpc.lumingraphics.mc.v2612.access.BorrowedCloseState2612;
+
 import com.github.slmpc.lumingraphics.mc.v2612.access.BorrowedBlazeResource2612;
 import com.mojang.blaze3d.opengl.GlBuffer;
 import org.spongepowered.asm.mixin.Mixin;

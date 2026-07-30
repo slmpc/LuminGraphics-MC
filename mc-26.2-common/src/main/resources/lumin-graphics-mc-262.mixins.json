@@ -1,18 +1,20 @@
 {
   "required": true,
   "minVersion": "0.8.7",
-  "package": "com.github.slmpc.lumingraphics.mc.v262",
+  "package": "com.github.slmpc.lumingraphics.mc.v262.mixin",
+  "plugin": "com.github.slmpc.lumingraphics.mc.v262.mixin.SmokeMixinConfigPlugin262",
   "compatibilityLevel": "JAVA_25",
   "client": [
-    "mixin.GlTextureBorrowedMixin262",
-    "mixin.GlBufferBorrowedMixin262",
-    "mixin.GlShaderBorrowedMixin262",
-    "mixin.GlProgramBorrowedMixin262",
-    "access.GlInvokers262$Texture",
-    "access.GlInvokers262$TextureView",
-    "access.GlInvokers262$Buffer",
-    "access.GlInvokers262$Shader",
-    "access.GlInvokers262$Program"
+    "GlTextureBorrowedMixin262",
+    "GlBufferBorrowedMixin262",
+    "GlShaderBorrowedMixin262",
+    "GlProgramBorrowedMixin262",
+    "GlBufferDsaMixin262",
+    "GlInvokers262$Texture",
+    "GlInvokers262$TextureView",
+    "GlInvokers262$Buffer",
+    "GlInvokers262$Shader",
+    "GlInvokers262$Program"
   ],
   "injectors": { "defaultRequire": 1 }
 }

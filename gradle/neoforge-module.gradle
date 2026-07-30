@@ -45,9 +45,15 @@ dependencies {
 
 neoForge {
     accessTransformers.from(accessTransformer)
+    runs {
+        client {
+            client()
+        }
+    }
     mods {
         lumin_graphics_mc {
             sourceSet sourceSets.main
+            sourceSet commonProject.sourceSets.main
         }
     }
 }
@@ -221,3 +227,27 @@ def verifyNeoForgeContract = tasks.register('verifyNeoForgeContract') {
 }
 
 tasks.named('check') { dependsOn verifyNeoForgeContract }
+
+def todo22TaskNames = gradle.startParameter.taskNames.collect { it.tokenize(':').last() }
+if (todo22TaskNames.any { it in ['runAllBridgeSmokes', 'runAllBridgeNegativeSmokes'] }) {
+    def negative = todo22TaskNames.contains('runAllBridgeNegativeSmokes')
+    def negativeModes = [
+            'mc-26.1.2-neoforge': 'stale-token',
+            'mc-26.2-neoforge': 'missing-accessor'
+    ]
+    def evidenceDir = System.getenv('LUMIN_MC_SMOKE_EVIDENCE_DIR') ?:
+            'D:/Dev/ChenMeng/LuminGraphics/.omo/start-work/attempts/lumin-graphics-prism-rhi-migration-20260730/todo22-smokes'
+    def smokeRunDir = layout.buildDirectory.dir("todo22-run-${negative ? 'negative' : 'positive'}")
+    tasks.matching { it.name == 'runClient' }.configureEach {
+        def smokeOutput = new File(evidenceDir, "${project.name}-${negative ? 'negative' : 'positive'}.json")
+        environment 'LUMIN_MC_SMOKE_MODE', negative ? negativeModes[project.name] : 'positive'
+        environment 'LUMIN_MC_SMOKE_OUTPUT', smokeOutput.absolutePath
+        doFirst {
+            delete smokeOutput
+            if (!negative) delete new File(smokeOutput.parentFile, smokeOutput.name.replace('.json', '.png'))
+            delete smokeRunDir
+            workingDir smokeRunDir.get().asFile
+        }
+        doLast { delete smokeRunDir }
+    }
+}

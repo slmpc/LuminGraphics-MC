@@ -178,3 +178,69 @@ tasks.register('buildAllVariants') {
     }
     dependsOn 'verifyVariantJars'
 }
+
+def bridgeSmokeVariants = [
+        ':mc-26.1.2-fabric', ':mc-26.1.2-neoforge',
+        ':mc-26.2-fabric', ':mc-26.2-neoforge'
+]
+def bridgeSmokeEvidence = file(System.getenv('LUMIN_MC_SMOKE_EVIDENCE_DIR') ?:
+        'D:/Dev/ChenMeng/LuminGraphics/.omo/start-work/attempts/lumin-graphics-prism-rhi-migration-20260730/todo22-smokes')
+
+def validateBridgeSmokeArtifacts = { boolean negative ->
+    def suffix = negative ? 'negative' : 'positive'
+    bridgeSmokeVariants.each { path ->
+        def name = path.substring(1)
+        def jsonFile = new File(bridgeSmokeEvidence, "${name}-${suffix}.json")
+        if (!jsonFile.isFile() || jsonFile.length() == 0) {
+            throw new GradleException("Missing terminal bridge smoke artifact: ${jsonFile}")
+        }
+        def receipt = new groovy.json.JsonSlurper().parse(jsonFile)
+        if (receipt.pass != true || receipt.cleanup != true || receipt.mode != (negative ? receipt.mode : 'positive')) {
+            throw new GradleException("Bridge smoke did not pass: ${jsonFile}: ${receipt}")
+        }
+        if (negative) {
+            if (receipt.expectedFailure != receipt.observedFailure || receipt.beforeDraw != true || receipt.beforeDeletion != true) {
+                throw new GradleException("Negative smoke did not fail before native work: ${jsonFile}")
+            }
+            return
+        }
+        if (receipt.objects?.size() != 3 || receipt.objects.any { object ->
+            object.directions?.size() != 2 || object.directions.any { it.mode != 'BORROWED_ZERO_COPY' || !(it.nativeId instanceof Number) } ||
+                    object.preCloseGlIs != true || object.borrowedCloseGlIs != true || object.ownerCloseGlIs != false
+        }) throw new GradleException("Incomplete zero-copy object matrix: ${jsonFile}")
+        ['sampler', 'pipeline', 'encoder', 'renderPass', 'borrowedCloseLive', 'ownerCloseDeleted'].each { field ->
+            if (receipt[field] != true) throw new GradleException("Missing ${field} proof: ${jsonFile}")
+        }
+        def pngFile = new File(jsonFile.parentFile, jsonFile.name.replace('.json', '.png'))
+        def image = javax.imageio.ImageIO.read(pngFile)
+        if (image == null || image.width != 8 || image.height != 8) throw new GradleException("Invalid PNG: ${pngFile}")
+        def colors = new HashSet<Integer>()
+        for (int y = 0; y < image.height; y++) for (int x = 0; x < image.width; x++) colors.add(image.getRGB(x, y))
+        if (colors.size() < 4) throw new GradleException("PNG is blank or lacks deterministic colors: ${pngFile}")
+        def digest = java.security.MessageDigest.getInstance('SHA-256').digest(pngFile.bytes).encodeHex().toString()
+        if (receipt.pixelHash != digest) throw new GradleException("PNG hash mismatch: ${pngFile}")
+    }
+}
+
+def registerBridgeSmokeMatrix = { String taskName, boolean negative ->
+    tasks.register(taskName) {
+        group = 'verification'
+        description = "Runs all four real Minecraft bridge ${negative ? 'negative ' : ''}smokes sequentially."
+        bridgeSmokeVariants.each { dependsOn "${it}:runClient" }
+        doLast { validateBridgeSmokeArtifacts(negative) }
+    }
+}
+
+registerBridgeSmokeMatrix('runAllBridgeSmokes', false)
+registerBridgeSmokeMatrix('runAllBridgeNegativeSmokes', true)
+
+if (gradle.startParameter.taskNames.any { it.tokenize(':').last() in ['runAllBridgeSmokes', 'runAllBridgeNegativeSmokes'] }) {
+    gradle.projectsEvaluated {
+        def prior = null
+        bridgeSmokeVariants.each { path ->
+            def current = project(path).tasks.named('runClient')
+            if (prior != null) current.configure { mustRunAfter prior }
+            prior = current
+        }
+    }
+}

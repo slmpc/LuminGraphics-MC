@@ -1,4 +1,4 @@
-package com.github.slmpc.lumingraphics.mc.v2612.access;
+package com.github.slmpc.lumingraphics.mc.v2612.mixin;
 
 import com.mojang.blaze3d.opengl.DirectStateAccess;
 import com.mojang.blaze3d.opengl.GlBuffer;

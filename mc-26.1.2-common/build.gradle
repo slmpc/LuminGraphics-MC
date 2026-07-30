@@ -6,6 +6,8 @@ neoForge {
 
 dependencies {
     api 'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-common:0.1.0'
+    implementation 'com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:0.1.0'
+    implementation 'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:0.1.0'
     api 'com.github.slmpc.lumingraphics:lumin-graphics-text:0.1.0'
     compileOnly 'org.spongepowered:mixin:0.8.7'
     testImplementation libs.junit
