@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "lumin_graphics_mc",
+  "version": "0.1.0+mc26.1.2",
+  "name": "LuminGraphics MC",
+  "description": "Minecraft 26.1.2 bridge for caller-owned LuminGraphics contexts.",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.github.slmpc.lumingraphics.mc.fabric.v2612.LuminGraphicsFabricClient"
+    ]
+  },
+  "mixins": [
+    "lumin_graphics_mc_2612.mixins.json"
+  ],
+  "accessWidener": "lumin_graphics_mc_2612.accesswidener",
+  "depends": {
+    "fabricloader": "=0.19.2",
+    "minecraft": "=26.1.2",
+    "java": ">=25",
+    "fabric-api": "=0.150.0+26.1.2"
+  }
+}
