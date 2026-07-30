@@ -244,3 +244,56 @@ if (gradle.startParameter.taskNames.any { it.tokenize(':').last() in ['runAllBri
         }
     }
 }
+
+def architectureModules = [
+        ':bridge-contract', ':mc-26.1.2-common', ':mc-26.1.2-fabric', ':mc-26.1.2-neoforge',
+        ':mc-26.2-common', ':mc-26.2-fabric', ':mc-26.2-neoforge'
+]
+
+def architectureMatrixCheck = project(':bridge-contract').tasks.register('architectureMatrixCheck', Test) {
+    group = 'verification'
+    dependsOn project(':bridge-contract').tasks.named('testClasses')
+    testClassesDirs = project(':bridge-contract').sourceSets.test.output.classesDirs
+    classpath = project(':bridge-contract').sourceSets.test.runtimeClasspath
+    include '**/BridgeMatrixTest.class'
+    useJUnitPlatform()
+    testLogging.showStandardStreams = true
+}
+
+tasks.register('architectureCheck', Test) {
+    group = 'verification'
+    description = 'Checks reflection, loader, version, GAV, service, window, JAR, and bridge-matrix boundaries.'
+    dependsOn testClasses, architectureMatrixCheck
+    architectureModules.each { module ->
+        dependsOn "${module}:classes"
+        if (module.contains('fabric') || module.contains('neoforge')) dependsOn "${module}:jar"
+    }
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    include '**/ArchitectureGuardTest.class'
+    useJUnitPlatform()
+    testLogging.showStandardStreams = true
+    systemProperty 'lumin.mc.root', rootProject.projectDir.absolutePath
+    doLast {
+        int dependencyCount = 0
+        architectureModules.each { path ->
+            def module = project(path)
+            ['api', 'implementation', 'compileOnly', 'runtimeOnly'].each { name ->
+                def configuration = module.configurations.findByName(name)
+                if (configuration == null) return
+                configuration.dependencies.each { dependency ->
+                    dependencyCount++
+                    if (dependency.version == '0.0.1') {
+                        throw new GradleException("stale 0.0.1 GAV in ${path}:${name}: ${dependency.group}:${dependency.name}:${dependency.version}")
+                    }
+                    if (dependency.group in ['com.github.slmpc.lumingraphics', 'com.github.slmpc.prismrhi']
+                            && dependency.version != null && dependency.version != '0.1.0') {
+                        throw new GradleException("stale published GAV in ${path}:${name}: ${dependency.group}:${dependency.name}:${dependency.version}")
+                    }
+                }
+            }
+        }
+        if (dependencyCount == 0) throw new GradleException('architecture dependency graph inspection was empty')
+        println "ARCH_MC_DEPENDENCIES count=${dependencyCount} modules=${architectureModules.size()}"
+    }
+}

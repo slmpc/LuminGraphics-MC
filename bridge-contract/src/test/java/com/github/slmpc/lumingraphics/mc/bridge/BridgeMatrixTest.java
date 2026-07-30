@@ -53,6 +53,7 @@ final class BridgeMatrixTest {
                 .allMatch(row -> row.fields().get("neoform_origin").equals("26.1.2-1")));
         assertTrue(matrix.rows().stream().filter(row -> row.version().equals("26.2"))
                 .allMatch(row -> row.fields().get("neoform_origin").equals("26.2-2")));
+        System.out.println("ARCH_MC_LEDGER rows=168 schemaColumns=22 versions=2 loaders=2 backends=3 objects=7 directions=2");
     }
 
     @Test
@@ -85,6 +86,7 @@ final class BridgeMatrixTest {
                 Files.deleteIfExists(fixture);
             }
         }
+        System.out.println("ARCH_MC_MATRIX_MUTATIONS rejected=15 tempFixtures cleanup=15 schema-count-policy-provenance");
     }
 
     @Test
