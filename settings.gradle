@@ -7,6 +7,12 @@ pluginManagement {
     }
 }
 
+def localMavenRepository = System.getProperty('maven.repo.local')
+if (localMavenRepository == null) {
+    localMavenRepository = new File(System.getProperty('user.home'), '.m2/repository').absolutePath
+    System.setProperty('maven.repo.local', localMavenRepository)
+}
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
@@ -14,7 +20,7 @@ dependencyResolutionManagement {
             forRepository {
                 maven {
                     name = 'isolatedLuminChain'
-                    url = uri(System.getProperty('maven.repo.local', layout.settingsDirectory.dir('.missing-m2').asFile.absolutePath))
+                    url = uri(localMavenRepository)
                     metadataSources { mavenPom(); gradleMetadata(); artifact() }
                 }
             }

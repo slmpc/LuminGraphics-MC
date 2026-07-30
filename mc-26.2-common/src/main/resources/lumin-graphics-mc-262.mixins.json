@@ -1,0 +1,18 @@
+{
+  "required": true,
+  "minVersion": "0.8.7",
+  "package": "com.github.slmpc.lumingraphics.mc.v262",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "mixin.GlTextureBorrowedMixin262",
+    "mixin.GlBufferBorrowedMixin262",
+    "mixin.GlShaderBorrowedMixin262",
+    "mixin.GlProgramBorrowedMixin262",
+    "access.GlInvokers262$Texture",
+    "access.GlInvokers262$TextureView",
+    "access.GlInvokers262$Buffer",
+    "access.GlInvokers262$Shader",
+    "access.GlInvokers262$Program"
+  ],
+  "injectors": { "defaultRequire": 1 }
+}

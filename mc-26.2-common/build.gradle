@@ -1,2 +1,73 @@
 apply from: rootProject.file('gradle/common-module.gradle')
 neoForge { neoFormVersion = '26.2-2' }
+
+dependencies {
+    api 'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-common:0.1.0'
+    api 'com.github.slmpc.lumingraphics:lumin-graphics-text'
+    compileOnly 'net.fabricmc:sponge-mixin:0.17.3+mixin.0.8.7'
+    testImplementation libs.junit
+    testRuntimeOnly libs.junit.launcher
+}
+
+test { useJUnitPlatform() }
+
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs.addAll(['-Xlint:all,-processing'])
+}
+
+sourceSets {
+    test {
+        compileClasspath += main.compileClasspath
+        runtimeClasspath += main.runtimeClasspath
+    }
+}
+
+def accessTargets = layout.projectDirectory.file('src/main/resources/lumin-graphics-mc-262.access-targets.properties')
+def createMinecraftArtifactsTask = tasks.named('createMinecraftArtifacts')
+def generatedMinecraftSources = createMinecraftArtifactsTask.flatMap { it.gameSourcesArtifact }
+
+def verify262AccessTargetsTask = tasks.register('verify262AccessTargets', JavaExec) {
+    group = 'verification'
+    dependsOn testClasses, createMinecraftArtifactsTask
+    inputs.file(generatedMinecraftSources)
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.github.slmpc.lumingraphics.mc.v262.verify.AccessTargetVerifier262'
+    doFirst {
+        def referenceOverride = providers.gradleProperty('verify262Reference').orNull
+        setArgs([referenceOverride == null ? rootProject.file('reference/vanilla-26.2') : rootProject.file(referenceOverride),
+                accessTargets.asFile, layout.buildDirectory.dir('classes/java/main').get().asFile,
+                generatedMinecraftSources.get().asFile])
+    }
+}
+
+def verifyNoCrossVersionLeakTask = tasks.register('verifyNoCrossVersionLeak', JavaExec) {
+    group = 'verification'
+    dependsOn testClasses
+    def injectedClasspath = providers.gradleProperty('verify262InjectedClasspath').orElse('')
+    def snapshotDirectory = layout.buildDirectory.dir('tmp/verifyNoCrossVersionLeak')
+    def compileClasspathSnapshot = snapshotDirectory.map { it.file('compile-classpath.txt') }
+    def runtimeClasspathSnapshot = snapshotDirectory.map { it.file('runtime-classpath.txt') }
+    inputs.files(sourceSets.main.compileClasspath).withPropertyName('mainCompileClasspath')
+    inputs.files(sourceSets.test.runtimeClasspath).withPropertyName('testRuntimeClasspath')
+    inputs.property('injectedClasspath', injectedClasspath)
+    outputs.files(compileClasspathSnapshot, runtimeClasspathSnapshot)
+    outputs.upToDateWhen { false }
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.github.slmpc.lumingraphics.mc.v262.verify.CrossVersionVerifier262'
+    doFirst {
+        def injectedFiles = injectedClasspath.get().isBlank() ? [] :
+                injectedClasspath.get().split(java.util.regex.Pattern.quote(File.pathSeparator), -1)
+                        .findAll { !it.isBlank() }.collect { rootProject.file(it) }
+        def writeSnapshot = { snapshot, files ->
+            def output = snapshot.get().asFile.toPath()
+            java.nio.file.Files.createDirectories(output.parent)
+            def entries = files.collect { it.toPath().toAbsolutePath().normalize().toString() }.sort()
+            java.nio.file.Files.writeString(output, entries.join('\n') + '\n',
+                    java.nio.charset.StandardCharsets.UTF_8)
+        }
+        writeSnapshot(compileClasspathSnapshot, sourceSets.main.compileClasspath.files + injectedFiles)
+        writeSnapshot(runtimeClasspathSnapshot, sourceSets.test.runtimeClasspath.files)
+        setArgs([layout.projectDirectory.asFile, compileClasspathSnapshot.get().asFile,
+                runtimeClasspathSnapshot.get().asFile])
+    }
+}
