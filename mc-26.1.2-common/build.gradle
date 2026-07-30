@@ -1,2 +1,50 @@
 apply from: rootProject.file('gradle/common-module.gradle')
-neoForge { neoFormVersion = '26.1.2-1' }
+neoForge {
+    neoFormVersion = '26.1.2-1'
+    addModdingDependenciesTo sourceSets.test
+}
+
+dependencies {
+    api 'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-common:0.1.0'
+    api 'com.github.slmpc.lumingraphics:lumin-graphics-text:0.1.0'
+    compileOnly 'org.spongepowered:mixin:0.8.7'
+    testImplementation libs.junit
+    testImplementation 'org.ow2.asm:asm:9.9'
+    testCompileOnly 'org.spongepowered:mixin:0.8.7'
+    testRuntimeOnly libs.junit.launcher
+}
+
+test { useJUnitPlatform() }
+
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs.addAll(['-Xlint:all', '-Werror'])
+}
+
+tasks.register('verify2612AccessTargets') {
+    group = 'verification'
+    dependsOn test
+    doLast {
+        def config = file('src/main/resources/lumin_graphics_mc_2612.mixins.json')
+        if (!config.isFile()) throw new GradleException("Missing 26.1.2 mixin configuration: ${config}")
+        def text = config.getText('UTF-8')
+        ['GlBufferBorrowedMixin', 'GlTextureBorrowedMixin', 'GlShaderModuleBorrowedMixin',
+         'GlProgramBorrowedMixin'].each { name ->
+            if (!text.contains(name)) throw new GradleException("Missing 26.1.2 close mixin ${name}")
+        }
+        def referenceRoot = rootProject.file('reference/vanilla-26.1.2/com/mojang/blaze3d')
+        def requiredSource = [
+            'opengl/GlTexture.java': 'protected GlTexture(@GpuTexture.Usage int usage, String label, TextureFormat format, int width, int height, int depthOrLayers, int mipLevels, int id)',
+            'opengl/GlBuffer.java': 'protected GlBuffer(',
+            'opengl/GlShaderModule.java': 'public GlShaderModule(int shaderId, Identifier id, ShaderType type)',
+            'opengl/GlProgram.java': 'public void close()',
+            'systems/CommandEncoder.java': 'public CommandEncoder(GpuDeviceBackend device, CommandEncoderBackend backend)',
+            'systems/RenderPass.java': 'public RenderPass(RenderPassBackend backend, GpuDeviceBackend device)'
+        ]
+        requiredSource.each { relative, signature ->
+            def source = new File(referenceRoot, relative)
+            if (!source.isFile() || !source.getText('UTF-8').contains(signature)) {
+                throw new GradleException("Changed 26.1.2 access target ${relative}: ${signature}")
+            }
+        }
+    }
+}
