@@ -1,0 +1,16 @@
+package com.github.slmpc.lumingraphics.mc.bridge;
+
+public enum BridgeUnsupportedReason {
+    NO_NATIVE_HANDLE,
+    TYPE_MISMATCH,
+    BACKEND_MISMATCH,
+    CONTEXT_MISMATCH,
+    THREAD_MISMATCH,
+    TOKEN_INVALIDATED,
+    CLOSED,
+    OWNERSHIP_FORBIDDEN,
+    MC_SHAPE_CHANGED,
+    ZERO_COPY_UNSAFE,
+    VIEW_REQUIRES_PARENT,
+    COMMAND_OBJECT_NOT_RESOURCE
+}
