@@ -15,6 +15,8 @@ public final class BridgeLease<T> implements AutoCloseable {
     private final CloseAction destroyAction;
     private final CloseAction releaseAction;
     private final AtomicBoolean closed = new AtomicBoolean();
+    private boolean destroyed;
+    private boolean released;
 
     private BridgeLease(T value, BridgeContextIdentity context, BridgeInvalidationToken token,
                         BridgeOwnership ownership, CloseAction destroyAction, CloseAction releaseAction) {
@@ -63,11 +65,22 @@ public final class BridgeLease<T> implements AutoCloseable {
     public boolean isClosed() { return closed.get(); }
 
     @Override
-    public void close() throws BridgeDestroyException {
-        if (!closed.compareAndSet(false, true)) return;
-        if (ownership == BridgeOwnership.BORROWED) return;
-        BridgeDestroyException failure = runCloseAction("destroy", destroyAction);
-        BridgeDestroyException releaseFailure = runCloseAction("release", releaseAction);
+    public synchronized void close() throws BridgeDestroyException {
+        if (closed.get()) return;
+        if (ownership == BridgeOwnership.BORROWED) {
+            closed.set(true);
+            return;
+        }
+        if (Thread.currentThread() != token.ownerThread()) {
+            throw new BridgeWrongThreadException(token.ownerThread().getName(), Thread.currentThread().getName());
+        }
+        if (!token.isLive()) throw new BridgeInvalidatedException();
+
+        BridgeDestroyException failure = destroyed ? null : runCloseAction("destroy", destroyAction);
+        if (failure == null) destroyed = true;
+        BridgeDestroyException releaseFailure = released ? null : runCloseAction("release", releaseAction);
+        if (releaseFailure == null) released = true;
+        if (destroyed && released) closed.set(true);
         if (failure != null && releaseFailure != null) failure.addSuppressed(releaseFailure);
         if (failure != null) throw failure;
         if (releaseFailure != null) throw releaseFailure;

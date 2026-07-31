@@ -3,10 +3,8 @@ package com.github.slmpc.lumingraphics.mc.bridge;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.EnumSet;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 final class BridgeContractTest {
@@ -94,45 +92,89 @@ final class BridgeContractTest {
     }
 
     @Test
-    void ownedCloseDestroysExactlyOnceAndAggregatesFailures() {
+    void ownedCloseRejectsWrongThreadBeforeLifecycleActionsAndOwnerCanClose() throws Exception {
         BridgeContextIdentity context = BridgeContextIdentity.create("render");
         AtomicInteger destroys = new AtomicInteger();
-        BridgeLease<String> lease = BridgeLease.owned("buffer", context, context.newInvalidationToken(), () -> {
-            destroys.incrementAndGet();
-            throw new IllegalStateException("destroy");
-        }, () -> { throw new IllegalArgumentException("release"); });
+        AtomicInteger releases = new AtomicInteger();
+        BridgeLease<String> lease = BridgeLease.owned("buffer", context, context.newInvalidationToken(),
+                destroys::incrementAndGet, releases::incrementAndGet);
 
-        BridgeDestroyException failure = assertThrows(BridgeDestroyException.class, lease::close);
-        assertEquals("destroy", failure.getCause().getMessage());
-        assertEquals(1, failure.getSuppressed().length);
-        assertEquals("release", failure.getSuppressed()[0].getCause().getMessage());
-        assertDoesNotThrow(lease::close);
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        Thread wrongThread = new Thread(() -> {
+            try { lease.close(); } catch (Throwable error) { failure.set(error); }
+        }, "wrong-thread");
+        wrongThread.start();
+        wrongThread.join();
+
+        assertInstanceOf(BridgeWrongThreadException.class, failure.get());
+        assertEquals(0, destroys.get());
+        assertEquals(0, releases.get());
+        assertFalse(lease.isClosed());
+        lease.close();
         assertEquals(1, destroys.get());
-        assertThrows(BridgeClosedException.class, () -> lease.access(context));
+        assertEquals(1, releases.get());
+        assertTrue(lease.isClosed());
+        lease.close();
+        assertEquals(1, destroys.get());
+        assertEquals(1, releases.get());
     }
 
-    @RepeatedTest(20)
-    void concurrentInvalidationAndCloseRemainDeterministic() throws Exception {
+    @Test
+    void ownedCloseRejectsInvalidatedTokenBeforeLifecycleActions() {
         BridgeContextIdentity context = BridgeContextIdentity.create("render");
         BridgeInvalidationToken token = context.newInvalidationToken();
         AtomicInteger destroys = new AtomicInteger();
-        BridgeLease<String> lease = BridgeLease.owned("pipeline", context, token, destroys::incrementAndGet);
-        CountDownLatch start = new CountDownLatch(1);
-        Thread invalidate = new Thread(() -> awaitAndRun(start, token::invalidate));
-        Thread closeOne = new Thread(() -> awaitAndRun(start, () -> closeUnchecked(lease)));
-        Thread closeTwo = new Thread(() -> awaitAndRun(start, () -> closeUnchecked(lease)));
-        invalidate.start(); closeOne.start(); closeTwo.start(); start.countDown();
-        invalidate.join(); closeOne.join(); closeTwo.join();
-        assertEquals(1, destroys.get());
-        assertFalse(token.isLive());
-        assertThrows(BridgeClosedException.class, () -> lease.access(context));
+        AtomicInteger releases = new AtomicInteger();
+        BridgeLease<String> lease = BridgeLease.owned("pipeline", context, token,
+                destroys::incrementAndGet, releases::incrementAndGet);
+        token.invalidate();
+
+        assertThrows(BridgeInvalidatedException.class, lease::close);
+        assertEquals(0, destroys.get());
+        assertEquals(0, releases.get());
+        assertFalse(lease.isClosed());
     }
 
-    private static void awaitAndRun(CountDownLatch start, Runnable action) {
-        try { start.await(); action.run(); } catch (InterruptedException error) { Thread.currentThread().interrupt(); }
+    @Test
+    void ownedCloseRetriesOnlyFailedPhasesAndAggregatesFailures() throws Exception {
+        BridgeContextIdentity context = BridgeContextIdentity.create("render");
+        AtomicInteger destroyAttempts = new AtomicInteger();
+        AtomicInteger releaseAttempts = new AtomicInteger();
+        BridgeLease<String> bothFail = BridgeLease.owned("buffer", context, context.newInvalidationToken(), () -> {
+            if (destroyAttempts.incrementAndGet() == 1) throw new IllegalStateException("destroy");
+        }, () -> {
+            if (releaseAttempts.incrementAndGet() == 1) throw new IllegalArgumentException("release");
+        });
+
+        BridgeDestroyException firstFailure = assertThrows(BridgeDestroyException.class, bothFail::close);
+        assertEquals("destroy", firstFailure.getCause().getMessage());
+        assertEquals(1, firstFailure.getSuppressed().length);
+        assertEquals("release", firstFailure.getSuppressed()[0].getCause().getMessage());
+        assertFalse(bothFail.isClosed());
+        bothFail.close();
+        assertEquals(2, destroyAttempts.get());
+        assertEquals(2, releaseAttempts.get());
+        assertTrue(bothFail.isClosed());
+        bothFail.close();
+        assertEquals(2, destroyAttempts.get());
+        assertEquals(2, releaseAttempts.get());
+
+        AtomicInteger successfulDestroyAttempts = new AtomicInteger();
+        AtomicInteger failedReleaseAttempts = new AtomicInteger();
+        BridgeLease<String> releaseRetry = BridgeLease.owned("pipeline", context, context.newInvalidationToken(),
+                successfulDestroyAttempts::incrementAndGet, () -> {
+                    if (failedReleaseAttempts.incrementAndGet() == 1) throw new IllegalStateException("release");
+                });
+
+        assertThrows(BridgeDestroyException.class, releaseRetry::close);
+        assertFalse(releaseRetry.isClosed());
+        releaseRetry.close();
+        assertEquals(1, successfulDestroyAttempts.get());
+        assertEquals(2, failedReleaseAttempts.get());
+        assertTrue(releaseRetry.isClosed());
+        releaseRetry.close();
+        assertEquals(1, successfulDestroyAttempts.get());
+        assertEquals(2, failedReleaseAttempts.get());
     }
 
-    private static void closeUnchecked(BridgeLease<?> lease) {
-        try { lease.close(); } catch (BridgeDestroyException error) { throw new AssertionError(error); }
-    }
 }
