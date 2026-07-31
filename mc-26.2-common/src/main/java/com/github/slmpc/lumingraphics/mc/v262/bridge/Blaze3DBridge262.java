@@ -8,6 +8,7 @@ import com.github.slmpc.lumingraphics.mc.bridge.BridgeLease;
 import com.github.slmpc.lumingraphics.mc.bridge.BridgeResult;
 import com.github.slmpc.lumingraphics.mc.bridge.BridgeUnsupportedDetail;
 import com.github.slmpc.lumingraphics.mc.bridge.BridgeUnsupportedReason;
+import com.github.slmpc.lumingraphics.mc.bridge.BridgeWrongContextException;
 import com.github.slmpc.lumingraphics.mc.v262.access.GlObjectFactory262;
 import com.github.slmpc.lumingraphics.mc.v262.access.GlShaderModuleAccess262;
 import com.github.slmpc.prismrhi.backend.BackendApi;
@@ -124,7 +125,8 @@ public final class Blaze3DBridge262 {
         try {
             RhiImageView rhiView = rhiDevice.adoptImageView(new OpenGlImageViewAdoption(info));
             RhiTextureView262 value = new RhiTextureView262(image, rhiView);
-            return BridgeResult.success(BridgeLease.owned(value, bridgeContext, bridgeToken, value::close));
+            return BridgeResult.success(BridgeLease.owned(value, bridgeContext, bridgeToken,
+                    this::requireCloseContext, value::close));
         } catch (RhiInvalidArgumentException | RhiResourceClosedException | RhiResourceInvalidatedException error) {
             image.close();
             return rhiFailure("texture-view adoption", error);
@@ -333,7 +335,8 @@ public final class Blaze3DBridge262 {
             Function<RhiSampler, GpuSampler> rebuilder) {
         try {
             GpuSampler value = Objects.requireNonNull(rebuilder.apply(source), "rebuilder returned null");
-            return BridgeResult.success(BridgeLease.owned(value, bridgeContext, bridgeToken, value::close));
+            return BridgeResult.success(BridgeLease.owned(value, bridgeContext, bridgeToken,
+                    this::requireCloseContext, value::close));
         } catch (IllegalArgumentException | IllegalStateException | AssertionError error) {
             return drift("sampler rebuild failed: " + error.getMessage());
         }
@@ -348,7 +351,8 @@ public final class Blaze3DBridge262 {
             Function<RhiGraphicsPipeline, RenderPipeline> rebuilder) {
         try {
             RenderPipeline value = Objects.requireNonNull(rebuilder.apply(source), "rebuilder returned null");
-            return BridgeResult.success(BridgeLease.owned(value, bridgeContext, bridgeToken, () -> { }));
+            return BridgeResult.success(BridgeLease.owned(value, bridgeContext, bridgeToken,
+                    this::requireCloseContext, () -> { }));
         } catch (IllegalArgumentException | IllegalStateException | AssertionError error) {
             return drift("rebuild failed: " + error.getMessage());
         }
@@ -388,10 +392,23 @@ public final class Blaze3DBridge262 {
     private <T extends AutoCloseable> BridgeResult<BridgeLease<T>> owned(Supplier<T> supplier) {
         try {
             T value = Objects.requireNonNull(supplier.get(), "rebuilder returned null");
-            return BridgeResult.success(BridgeLease.owned(value, bridgeContext, bridgeToken, value::close));
+            return BridgeResult.success(BridgeLease.owned(value, bridgeContext, bridgeToken,
+                    this::requireCloseContext, value::close));
         } catch (IllegalArgumentException | IllegalStateException | AssertionError error) {
             return drift("rebuild failed: " + error.getMessage());
         }
+    }
+
+    private void requireCloseContext() {
+        BridgeContextIdentity currentContext = currentBridgeContext.get();
+        if (currentContext != bridgeContext) {
+            throw new BridgeWrongContextException(bridgeContext.diagnosticId(),
+                    currentContext == null ? "no bridge context" : currentContext.diagnosticId());
+        }
+        if (currentGlCapabilities.get() != glCapabilities) {
+            throw new BridgeWrongContextException(bridgeContext.diagnosticId(), "different OpenGL capabilities");
+        }
+        rhiToken.requireValid();
     }
 
     private static <T> BridgeResult<T> unsupported(BridgeCompatibilityAudit audit) {

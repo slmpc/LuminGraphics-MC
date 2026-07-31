@@ -13,6 +13,7 @@ import com.github.slmpc.lumingraphics.mc.bridge.BridgeLease;
 import com.github.slmpc.lumingraphics.mc.bridge.BridgeOwnership;
 import com.github.slmpc.lumingraphics.mc.bridge.BridgeResult;
 import com.github.slmpc.lumingraphics.mc.bridge.BridgeUnsupportedReason;
+import com.github.slmpc.lumingraphics.mc.bridge.BridgeWrongContextException;
 import com.github.slmpc.lumingraphics.mc.v262.access.GlObjectFactory262;
 import com.github.slmpc.prismrhi.RhiResourceClosedException;
 import com.github.slmpc.prismrhi.backend.BackendApi;
@@ -230,6 +231,33 @@ class Blaze3DBridge262ReverseFailureTest {
         source.close();
     }
 
+    @Test void ownedTextureViewCloseRequiresCurrentBridgeAndGlContexts() throws Exception {
+        List<String> closes = new ArrayList<>();
+        TrackingImage image = new TrackingImage(closes);
+        TrackingView view = new TrackingView(image, closes);
+        Fixture fixture = new Fixture(new ThrowingFactory(), image, view);
+        TestTextureView source = new TestTextureView(new TestTexture());
+        BridgeLease<Blaze3DBridge262.RhiTextureView262> lease =
+                fixture.bridge.textureViewToLumin(source).orElseThrow();
+
+        fixture.currentBridgeContext = BridgeContextIdentity.create("wrong-close-context");
+        assertThrows(BridgeWrongContextException.class, lease::close);
+        assertEquals(List.of(), closes);
+        assertFalse(lease.isClosed());
+
+        fixture.currentBridgeContext = fixture.bridgeContext;
+        fixture.currentGlCapabilities = new Object();
+        assertThrows(BridgeWrongContextException.class, lease::close);
+        assertEquals(List.of(), closes);
+        assertFalse(lease.isClosed());
+
+        fixture.currentGlCapabilities = fixture.capabilities;
+        lease.close();
+        assertEquals(List.of("view", "image"), closes);
+        assertTrue(lease.isClosed());
+        source.close();
+    }
+
     @Test void samplerRebuildCompatibilityFailureIsTyped() {
         Fixture fixture = new Fixture(new ThrowingFactory());
         BridgeResult<?> result = fixture.bridge.samplerToMinecraft(null, ignored -> {
@@ -270,6 +298,8 @@ class Blaze3DBridge262ReverseFailureTest {
         private final Object capabilities = new Object();
         private final RhiContextIdentity rhiContext = new RhiContextIdentity(41, "reverse-failure");
         private final RhiInvalidationToken rhiToken = new RhiInvalidationToken();
+        private BridgeContextIdentity currentBridgeContext = bridgeContext;
+        private Object currentGlCapabilities = capabilities;
         private final Blaze3DBridge262 bridge;
 
         private Fixture(GlObjectFactory262 factory) {
@@ -279,7 +309,7 @@ class Blaze3DBridge262ReverseFailureTest {
         private Fixture(GlObjectFactory262 factory, RhiImage adoptedImage, RhiImageView adoptedView) {
             bridge = new Blaze3DBridge262(new Device(rhiContext, adoptedImage, adoptedView), bridgeContext,
                     bridgeContext.newInvalidationToken(), rhiContext, rhiToken,
-                    capabilities, () -> capabilities, () -> bridgeContext, factory);
+                    capabilities, () -> currentGlCapabilities, () -> currentBridgeContext, factory);
         }
 
         private ViewImage image(long handle) {

@@ -3,6 +3,8 @@ package com.github.slmpc.lumingraphics.mc.bridge;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.EnumSet;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
@@ -86,7 +88,7 @@ final class BridgeContractTest {
         assertThrows(IllegalArgumentException.class,
                 () -> BridgeLease.borrowed("x", other, token));
         assertThrows(NullPointerException.class,
-                () -> BridgeLease.owned("x", context, token, null));
+                () -> BridgeLease.owned("x", context, token, null, () -> { }));
         BridgeLease<String> lease = BridgeLease.borrowed("x", context, token);
         assertThrows(NullPointerException.class, () -> lease.access(null));
     }
@@ -97,7 +99,7 @@ final class BridgeContractTest {
         AtomicInteger destroys = new AtomicInteger();
         AtomicInteger releases = new AtomicInteger();
         BridgeLease<String> lease = BridgeLease.owned("buffer", context, context.newInvalidationToken(),
-                destroys::incrementAndGet, releases::incrementAndGet);
+                () -> { }, destroys::incrementAndGet, releases::incrementAndGet);
 
         AtomicReference<Throwable> failure = new AtomicReference<>();
         Thread wrongThread = new Thread(() -> {
@@ -120,19 +122,79 @@ final class BridgeContractTest {
     }
 
     @Test
-    void ownedCloseRejectsInvalidatedTokenBeforeLifecycleActions() {
+    void ownedCloseAllowsOwnerCleanupAfterInvalidationWhileAccessStaysRejected() throws Exception {
         BridgeContextIdentity context = BridgeContextIdentity.create("render");
         BridgeInvalidationToken token = context.newInvalidationToken();
         AtomicInteger destroys = new AtomicInteger();
         AtomicInteger releases = new AtomicInteger();
         BridgeLease<String> lease = BridgeLease.owned("pipeline", context, token,
-                destroys::incrementAndGet, releases::incrementAndGet);
+                () -> { }, destroys::incrementAndGet, releases::incrementAndGet);
         token.invalidate();
 
-        assertThrows(BridgeInvalidatedException.class, lease::close);
+        assertThrows(BridgeInvalidatedException.class, () -> lease.access(context));
+        lease.close();
+        assertEquals(1, destroys.get());
+        assertEquals(1, releases.get());
+        assertTrue(lease.isClosed());
+    }
+
+    @Test
+    void ownedCloseRejectsReentrantAccessDuringDestroy() throws Exception {
+        BridgeContextIdentity context = BridgeContextIdentity.create("render");
+        AtomicReference<BridgeLease<String>> reference = new AtomicReference<>();
+        BridgeLease<String> lease = BridgeLease.owned("pipeline", context, context.newInvalidationToken(),
+                () -> { }, () -> assertThrows(BridgeClosedException.class, () -> reference.get().access(context)));
+        reference.set(lease);
+
+        lease.close();
+        assertTrue(lease.isClosed());
+    }
+
+    @Test
+    void ownedCloseDoesNotHoldLeaseMonitorWhileDestroyWaitsForOtherThreadAccess() throws Exception {
+        BridgeContextIdentity context = BridgeContextIdentity.create("render");
+        AtomicReference<BridgeLease<String>> reference = new AtomicReference<>();
+        CountDownLatch accessCompleted = new CountDownLatch(1);
+        AtomicReference<Throwable> accessFailure = new AtomicReference<>();
+        BridgeLease<String> lease = BridgeLease.owned("pipeline", context, context.newInvalidationToken(),
+                () -> { }, () -> {
+                    Thread accessThread = new Thread(() -> {
+                        try { reference.get().access(context); }
+                        catch (Throwable error) { accessFailure.set(error); }
+                        finally { accessCompleted.countDown(); }
+                    }, "lease-access");
+                    accessThread.start();
+                    assertTrue(accessCompleted.await(1, TimeUnit.SECONDS),
+                            "access thread blocked behind close callback");
+                    assertInstanceOf(BridgeClosedException.class, accessFailure.get());
+                    accessThread.join();
+                });
+        reference.set(lease);
+
+        lease.close();
+        assertTrue(lease.isClosed());
+    }
+
+    @Test
+    void ownedCloseGuardRejectsWrongContextBeforeLifecycleActions() throws Exception {
+        BridgeContextIdentity context = BridgeContextIdentity.create("render");
+        AtomicReference<BridgeContextIdentity> currentContext = new AtomicReference<>(context);
+        AtomicInteger destroys = new AtomicInteger();
+        BridgeLease<String> lease = BridgeLease.owned("pipeline", context, context.newInvalidationToken(), () -> {
+            BridgeContextIdentity current = currentContext.get();
+            if (current != context) {
+                throw new BridgeWrongContextException(context.diagnosticId(), current.diagnosticId());
+            }
+        }, destroys::incrementAndGet);
+        currentContext.set(BridgeContextIdentity.create("other"));
+
+        assertThrows(BridgeWrongContextException.class, lease::close);
         assertEquals(0, destroys.get());
-        assertEquals(0, releases.get());
         assertFalse(lease.isClosed());
+        currentContext.set(context);
+        lease.close();
+        assertEquals(1, destroys.get());
+        assertTrue(lease.isClosed());
     }
 
     @Test
@@ -140,7 +202,7 @@ final class BridgeContractTest {
         BridgeContextIdentity context = BridgeContextIdentity.create("render");
         AtomicInteger destroyAttempts = new AtomicInteger();
         AtomicInteger releaseAttempts = new AtomicInteger();
-        BridgeLease<String> bothFail = BridgeLease.owned("buffer", context, context.newInvalidationToken(), () -> {
+        BridgeLease<String> bothFail = BridgeLease.owned("buffer", context, context.newInvalidationToken(), () -> { }, () -> {
             if (destroyAttempts.incrementAndGet() == 1) throw new IllegalStateException("destroy");
         }, () -> {
             if (releaseAttempts.incrementAndGet() == 1) throw new IllegalArgumentException("release");
@@ -162,7 +224,7 @@ final class BridgeContractTest {
         AtomicInteger successfulDestroyAttempts = new AtomicInteger();
         AtomicInteger failedReleaseAttempts = new AtomicInteger();
         BridgeLease<String> releaseRetry = BridgeLease.owned("pipeline", context, context.newInvalidationToken(),
-                successfulDestroyAttempts::incrementAndGet, () -> {
+                () -> { }, successfulDestroyAttempts::incrementAndGet, () -> {
                     if (failedReleaseAttempts.incrementAndGet() == 1) throw new IllegalStateException("release");
                 });
 
