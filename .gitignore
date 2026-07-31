@@ -5,3 +5,5 @@
 *.iml
 .missing-m2/
 .omo/
+reference/
+references/
