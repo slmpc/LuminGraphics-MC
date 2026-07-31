@@ -24,7 +24,7 @@ dependencies {
     add("api", "com.github.slmpc.prismrhi:prism-rhi-backend-opengl-common:0.1.0")
     add("implementation", "com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:0.1.0")
     add("implementation", "com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:0.1.0")
-    add("api", "com.github.slmpc.lumingraphics:lumin-graphics-text:0.1.0")
+    add("api", "com.github.slmpc.lumingraphics:lumin-graphics-text:1.0.0")
     add("compileOnly", "net.fabricmc:sponge-mixin:0.17.3+mixin.0.8.7")
     add("testImplementation", libs.junit)
     add("testRuntimeOnly", libs.junit.launcher)

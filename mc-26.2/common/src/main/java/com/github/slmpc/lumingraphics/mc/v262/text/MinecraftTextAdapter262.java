@@ -1,7 +1,7 @@
 package com.github.slmpc.lumingraphics.mc.v262.text;
 
-import com.github.slmpc.lumingraphics.text.FontMetrics;
-import com.github.slmpc.lumingraphics.text.TextMeasurement;
+import com.github.slmpc.lumingraphics.text.font.FontMetrics;
+import com.github.slmpc.lumingraphics.text.layout.TextMeasurement;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import java.util.ArrayList;

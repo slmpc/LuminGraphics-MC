@@ -3,7 +3,7 @@ apply(plugin = "net.neoforged.moddev")
 
 dependencies {
     add("api", project(":bridge-contract"))
-    add("api", platform("com.github.slmpc.lumingraphics:lumin-graphics-bom:0.1.0"))
+    add("api", platform("com.github.slmpc.lumingraphics:lumin-graphics-bom:1.0.0"))
     add("api", "com.github.slmpc.lumingraphics:lumin-graphics-core")
     add("api", "com.github.slmpc.lumingraphics:lumin-graphics-render")
 }

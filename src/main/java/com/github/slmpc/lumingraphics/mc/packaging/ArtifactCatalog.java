@@ -17,26 +17,27 @@ import javax.xml.xpath.XPathFactory;
 import org.w3c.dom.Document;
 
 final class ArtifactCatalog {
-    static final String VERSION = "0.1.0";
+    static final String LUMIN_VERSION = "1.0.0";
+    static final String PRISM_VERSION = "0.1.0";
     static final List<Coordinate> EXPECTED = List.of(
-            new Coordinate("com.github.slmpc.lumingraphics", "lumin-graphics-core"),
-            new Coordinate("com.github.slmpc.lumingraphics", "lumin-graphics-render"),
-            new Coordinate("com.github.slmpc.lumingraphics", "lumin-graphics-text"),
-            new Coordinate("com.github.slmpc.lumingraphics", "lumin-graphics-ui"),
-            new Coordinate("com.github.slmpc.prismrhi", "prism-rhi-core"),
-            new Coordinate("com.github.slmpc.prismrhi", "prism-rhi-backend-opengl-common"),
-            new Coordinate("com.github.slmpc.prismrhi", "prism-rhi-backend-opengl41"),
-            new Coordinate("com.github.slmpc.prismrhi", "prism-rhi-backend-opengl-dsa"));
+            new Coordinate("com.github.slmpc.lumingraphics", "lumin-graphics-core", LUMIN_VERSION),
+            new Coordinate("com.github.slmpc.lumingraphics", "lumin-graphics-render", LUMIN_VERSION),
+            new Coordinate("com.github.slmpc.lumingraphics", "lumin-graphics-text", LUMIN_VERSION),
+            new Coordinate("com.github.slmpc.lumingraphics", "lumin-graphics-ui", LUMIN_VERSION),
+            new Coordinate("com.github.slmpc.prismrhi", "prism-rhi-core", PRISM_VERSION),
+            new Coordinate("com.github.slmpc.prismrhi", "prism-rhi-backend-opengl-common", PRISM_VERSION),
+            new Coordinate("com.github.slmpc.prismrhi", "prism-rhi-backend-opengl41", PRISM_VERSION),
+            new Coordinate("com.github.slmpc.prismrhi", "prism-rhi-backend-opengl-dsa", PRISM_VERSION));
 
     private ArtifactCatalog() {}
 
     static Artifact load(Path repository, Coordinate coordinate) throws Exception {
         Path directory = repository.resolve(coordinate.group().replace('.', '/'))
-                .resolve(coordinate.artifact()).resolve(VERSION).normalize();
+                .resolve(coordinate.artifact()).resolve(coordinate.version()).normalize();
         if (!directory.startsWith(repository.normalize())) {
             throw new IOException("Coordinate escaped isolated repository: " + coordinate);
         }
-        String baseName = coordinate.artifact() + '-' + VERSION;
+        String baseName = coordinate.artifact() + '-' + coordinate.version();
         Path jar = directory.resolve(baseName + ".jar");
         Path module = directory.resolve(baseName + ".module");
         Path pom = directory.resolve(baseName + ".pom");
@@ -61,7 +62,7 @@ final class ArtifactCatalog {
         JsonObject component = root.getAsJsonObject("component");
         requireJson(component, "group", coordinate.group(), module);
         requireJson(component, "module", coordinate.artifact(), module);
-        requireJson(component, "version", VERSION, module);
+        requireJson(component, "version", coordinate.version(), module);
         for (JsonElement variantElement : root.getAsJsonArray("variants")) {
             JsonObject variant = variantElement.getAsJsonObject();
             if (!"runtimeElements".equals(variant.get("name").getAsString())) {
@@ -95,7 +96,7 @@ final class ArtifactCatalog {
         var xpath = XPathFactory.newInstance().newXPath();
         assertPomValue(xpath, document, "/*[local-name()='project']/*[local-name()='groupId']/text()", coordinate.group(), pom);
         assertPomValue(xpath, document, "/*[local-name()='project']/*[local-name()='artifactId']/text()", coordinate.artifact(), pom);
-        assertPomValue(xpath, document, "/*[local-name()='project']/*[local-name()='version']/text()", VERSION, pom);
+        assertPomValue(xpath, document, "/*[local-name()='project']/*[local-name()='version']/text()", coordinate.version(), pom);
     }
 
     private static void assertPomValue(javax.xml.xpath.XPath xpath, Document document, String expression,
@@ -106,9 +107,9 @@ final class ArtifactCatalog {
         }
     }
 
-    record Coordinate(String group, String artifact) {
+    record Coordinate(String group, String artifact, String version) {
         String id() {
-            return group + ':' + artifact + ':' + VERSION;
+            return group + ':' + artifact + ':' + version;
         }
     }
 

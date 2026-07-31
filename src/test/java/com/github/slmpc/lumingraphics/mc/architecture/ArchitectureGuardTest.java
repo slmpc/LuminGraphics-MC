@@ -223,7 +223,11 @@ final class ArchitectureGuardTest {
     private static void inspectPublishedCoordinate(String path, String coordinate) {
         String[] parts = coordinate.split(":", -1);
         reject(parts.length != 3, path, "malformed GAV " + coordinate);
-        reject((parts[0].equals("com.github.slmpc.lumingraphics") || parts[0].equals("com.github.slmpc.prismrhi"))
-                && !parts[2].equals("0.1.0"), path, "stale published GAV " + coordinate);
+        String expectedVersion = switch (parts[0]) {
+            case "com.github.slmpc.lumingraphics" -> "1.0.0";
+            case "com.github.slmpc.prismrhi" -> "0.1.0";
+            default -> null;
+        };
+        reject(expectedVersion != null && !parts[2].equals(expectedVersion), path, "stale published GAV " + coordinate);
     }
 }

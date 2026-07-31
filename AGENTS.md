@@ -2,7 +2,7 @@
 
 ## Overview
 
-LuminGraphics-MC 0.1.0 bridges Minecraft client rendering to LuminGraphics
+LuminGraphics-MC 1.0.0 bridges Minecraft client rendering to LuminGraphics
 through a loader/version matrix. It targets Java 25 and publishes local Maven
 artifacts only; no public registry workflow is documented.
 

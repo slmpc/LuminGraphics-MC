@@ -44,7 +44,7 @@ final class VariantJarVerifierTest {
 
     private record VariantPath(String loader, String minecraft) {
         private String fileName() {
-            return "lumin-graphics-mc-" + loader + '-' + minecraft + "-0.1.0.jar";
+            return "lumin-graphics-mc-" + loader + '-' + minecraft + "-1.0.0.jar";
         }
     }
 }

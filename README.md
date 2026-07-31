@@ -1,4 +1,4 @@
-# LuminGraphics-MC 0.1.0
+# LuminGraphics-MC 1.0.0
 
 LuminGraphics-MC bridges supported Minecraft client rendering paths to
 LuminGraphics for Minecraft 26.1.2 and 26.2 on Fabric and NeoForge. Start with

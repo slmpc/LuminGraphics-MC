@@ -14,10 +14,10 @@ def mixinConfigName = minecraftVersion == '26.1.2' ?
         'lumin_graphics_mc_2612.mixins.json' : 'lumin-graphics-mc-262.mixins.json'
 def accessTransformer = layout.projectDirectory.file('src/main/resources/META-INF/accesstransformer.cfg')
 def packagedLibraries = [
-        'com.github.slmpc.lumingraphics:lumin-graphics-core:0.1.0',
-        'com.github.slmpc.lumingraphics:lumin-graphics-render:0.1.0',
-        'com.github.slmpc.lumingraphics:lumin-graphics-text:0.1.0',
-        'com.github.slmpc.lumingraphics:lumin-graphics-ui:0.1.0',
+        'com.github.slmpc.lumingraphics:lumin-graphics-core:1.0.0',
+        'com.github.slmpc.lumingraphics:lumin-graphics-render:1.0.0',
+        'com.github.slmpc.lumingraphics:lumin-graphics-text:1.0.0',
+        'com.github.slmpc.lumingraphics:lumin-graphics-ui:1.0.0',
         'com.github.slmpc.prismrhi:prism-rhi-core:0.1.0',
         'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-common:0.1.0',
         'com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:0.1.0',
@@ -123,7 +123,7 @@ def verifyNeoForgeContract = tasks.register('verifyNeoForgeContract') {
         def metadataText = metadata.getText('UTF-8')
         def requiredMetadata = [
                 'modLoader="javafml"', 'loaderVersion="[11,)"', 'modId="lumin_graphics_mc"',
-                "version=\"0.1.0+mc${minecraftVersion}\"", "config=\"${mixinConfigName}\"",
+                "version=\"1.0.0+mc${minecraftVersion}\"", "config=\"${mixinConfigName}\"",
                 "versionRange=\"[${expectedNeoForgeVersion}]\"", "versionRange=\"[${minecraftVersion}]\"",
                 'side="CLIENT"', '[features.lumin_graphics_mc]', 'javaVersion="[25,)"'
         ]

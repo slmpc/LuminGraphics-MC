@@ -1,6 +1,6 @@
 package com.github.slmpc.lumingraphics.mc.v2612.text;
 
-import com.github.slmpc.lumingraphics.text.FontLoader;
+import com.github.slmpc.lumingraphics.text.font.FontLoader;
 import java.util.Objects;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;

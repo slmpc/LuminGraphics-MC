@@ -6,9 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.github.slmpc.lumingraphics.mc.v2612.text.FontGlyphAdapter;
 import com.github.slmpc.lumingraphics.mc.v2612.text.FontMetricsAdapter;
-import com.github.slmpc.lumingraphics.text.FontLoader;
-import com.github.slmpc.lumingraphics.text.FontMetrics;
-import com.github.slmpc.lumingraphics.text.GlyphDescriptor;
+import com.github.slmpc.lumingraphics.text.atlas.GlyphDescriptor;
+import com.github.slmpc.lumingraphics.text.font.FontLoader;
+import com.github.slmpc.lumingraphics.text.font.FontMetrics;
 import com.github.slmpc.prismrhi.format.RhiFormat;
 import com.mojang.blaze3d.textures.TextureFormat;
 import java.util.concurrent.CompletableFuture;

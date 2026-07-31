@@ -280,8 +280,9 @@ tasks.register('architectureCheck', Test) {
                     if (dependency.version == '0.0.1') {
                         throw new GradleException("stale 0.0.1 GAV in ${path}:${name}: ${dependency.group}:${dependency.name}:${dependency.version}")
                     }
-                    if (dependency.group in ['com.github.slmpc.lumingraphics', 'com.github.slmpc.prismrhi']
-                            && dependency.version != null && dependency.version != '0.1.0') {
+                    def expectedVersion = dependency.group == 'com.github.slmpc.lumingraphics' ? '1.0.0'
+                            : dependency.group == 'com.github.slmpc.prismrhi' ? '0.1.0' : null
+                    if (expectedVersion != null && dependency.version != null && dependency.version != expectedVersion) {
                         throw new GradleException("stale published GAV in ${path}:${name}: ${dependency.group}:${dependency.name}:${dependency.version}")
                     }
                 }
