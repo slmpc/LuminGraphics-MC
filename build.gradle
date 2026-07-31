@@ -148,20 +148,21 @@ tasks.register('verifyWrapperChecksum') {
 }
 
 def minecraftModules = minecraftLeafSpecs.values() as List
+def publishedProjectPaths = [':bridge-contract'] + minecraftModules.collect { it.projectPath }
 def loaderVariants = minecraftModules.findAll { it.role != 'common' }.collect { it.projectPath }
 
-gradle.allprojects { loaderProject ->
-    if (loaderProject.path in loaderVariants) {
-        def loaderSpec = minecraftLeafSpecs[loaderProject.path]
-        loaderProject.pluginManager.withPlugin('java') {
-            loaderProject.pluginManager.apply('maven-publish')
-            loaderProject.extensions.configure(PublishingExtension) { publishingExtension ->
+gradle.allprojects { minecraftProject ->
+    if (minecraftProject.path in publishedProjectPaths) {
+        def minecraftSpec = minecraftLeafSpecs[minecraftProject.path]
+        minecraftProject.pluginManager.withPlugin('java') {
+            minecraftProject.pluginManager.apply('maven-publish')
+            minecraftProject.extensions.configure(PublishingExtension) { publishingExtension ->
                 publishingExtension.publications.create('mavenJava', MavenPublication) { publication ->
-                    publication.from(loaderProject.components.getByName('java'))
-                    publication.artifactId = loaderSpec.archiveBaseName
+                    publication.from(minecraftProject.components.getByName('java'))
+                    publication.artifactId = minecraftSpec == null ? minecraftProject.name : minecraftSpec.archiveBaseName
                     publication.pom { pom ->
                         pom.name = publication.artifactId
-                        pom.description = "LuminGraphics-MC ${loaderProject.path} loader artifact"
+                        pom.description = "LuminGraphics-MC ${minecraftProject.path} artifact"
                     }
                 }
             }
