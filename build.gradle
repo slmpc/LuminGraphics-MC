@@ -4,6 +4,9 @@ plugins {
     alias(libs.plugins.moddev) apply false
 }
 
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
+
 group = providers.gradleProperty('group').get()
 version = providers.gradleProperty('version').get()
 
@@ -14,7 +17,7 @@ allprojects {
 
 subprojects {
     repositories {
-        mavenLocal()
+        maven { url = uri('https://slmpc.github.io/maven-repository/') }
     }
     plugins.withId('java') {
         java {
@@ -61,7 +64,6 @@ test {
         }
         inputs.property propertyName, value ?: '<default>'
     }
-    systemProperty 'maven.repo.local', System.getProperty('maven.repo.local', '')
 }
 
 def minecraftLeafSpecs = gradle.ext.minecraftLeafSpecs
@@ -148,17 +150,43 @@ tasks.register('verifyWrapperChecksum') {
 def minecraftModules = minecraftLeafSpecs.values() as List
 def loaderVariants = minecraftModules.findAll { it.role != 'common' }.collect { it.projectPath }
 
+gradle.allprojects { loaderProject ->
+    if (loaderProject.path in loaderVariants) {
+        def loaderSpec = minecraftLeafSpecs[loaderProject.path]
+        loaderProject.pluginManager.withPlugin('java') {
+            loaderProject.pluginManager.apply('maven-publish')
+            loaderProject.extensions.configure(PublishingExtension) { publishingExtension ->
+                publishingExtension.publications.create('mavenJava', MavenPublication) { publication ->
+                    publication.from(loaderProject.components.getByName('java'))
+                    publication.artifactId = loaderSpec.archiveBaseName
+                    publication.pom { pom ->
+                        pom.name = publication.artifactId
+                        pom.description = "LuminGraphics-MC ${loaderProject.path} loader artifact"
+                    }
+                }
+            }
+        }
+    }
+}
+
 tasks.register('verifyVariantJars', JavaExec) {
     group = 'verification'
-    description = 'Recursively verifies the four self-contained loader artifacts and their isolated provenance.'
+    description = 'Recursively verifies the four self-contained loader artifacts and their resolved provenance.'
     dependsOn classes
     loaderVariants.each { variant -> dependsOn "${variant}:jar" }
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.github.slmpc.lumingraphics.mc.packaging.VariantJarVerifier'
     doFirst {
-        def localMavenRepository = System.getProperty('maven.repo.local',
-                new File(System.getProperty('user.home'), '.m2/repository').absolutePath)
-        def arguments = [layout.projectDirectory.asFile, localMavenRepository]
+        def resolvedArtifacts = [] as LinkedHashSet
+        loaderVariants.each { variant ->
+            resolvedArtifacts.addAll(project(variant).configurations
+                    .getByName('luminGraphicsShadow').resolvedConfiguration.lenientConfiguration.artifacts
+                    .collect { it.file })
+        }
+        if (resolvedArtifacts.size() != 8) {
+            throw new GradleException("Expected eight resolved Lumin/Prism artifacts, got ${resolvedArtifacts.size()}")
+        }
+        def arguments = [layout.projectDirectory.asFile] + resolvedArtifacts
         def overrideDirectory = providers.gradleProperty('variantJarOverride').orNull
         if (overrideDirectory != null) arguments.add(file(overrideDirectory))
         setArgs(arguments)

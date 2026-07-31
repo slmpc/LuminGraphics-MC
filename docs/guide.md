@@ -11,7 +11,7 @@ loader artifact matching both version and loader:
 JARs are implementation dependencies, not final mods.
 
 Every final loader artifact directly shadows the LuminGraphics and required
-PrismRHI payload. It contains their classes, shaders, and fonts directly, with
+PrismRHI payload. It contains their classes and shaders directly, with
 no Fabric JIJ or NeoForge jarJar dependency archives.
 
 ## Bridge Contract And Matrix

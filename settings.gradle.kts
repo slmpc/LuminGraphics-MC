@@ -12,7 +12,7 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
-        mavenLocal()
+        maven(url = "https://slmpc.github.io/maven-repository/")
         mavenCentral()
         maven(url = "https://libraries.minecraft.net")
         maven(url = "https://maven.fabricmc.net")

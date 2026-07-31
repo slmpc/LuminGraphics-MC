@@ -9,7 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,19 +22,20 @@ public final class VariantJarVerifier {
     private VariantJarVerifier() {}
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 2 || args.length > 3) {
-            throw new IllegalArgumentException("Usage: VariantJarVerifier <project-root> <isolated-m2> [artifact-override-dir]");
+        int expectedArguments = ArtifactCatalog.EXPECTED.size() + 1;
+        if (args.length != expectedArguments && args.length != expectedArguments + 1) {
+            throw new IllegalArgumentException("Usage: VariantJarVerifier <project-root> <resolved-artifact>...");
         }
         Path root = Path.of(args[0]).toAbsolutePath().normalize();
-        Path repository = Path.of(args[1]).toAbsolutePath().normalize();
-        Path override = args.length == 3 ? Path.of(args[2]).toAbsolutePath().normalize() : null;
-        if (!Files.isDirectory(repository)) {
-            throw new IOException("Isolated Maven repository does not exist: " + repository);
+        List<Path> resolvedJars = new ArrayList<>();
+        for (int index = 1; index < expectedArguments; index++) {
+            resolvedJars.add(Path.of(args[index]).toAbsolutePath().normalize());
         }
-        Map<String, ArtifactCatalog.Artifact> artifacts = new LinkedHashMap<>();
-        for (ArtifactCatalog.Coordinate coordinate : ArtifactCatalog.EXPECTED) {
-            ArtifactCatalog.Artifact artifact = ArtifactCatalog.load(repository, coordinate);
-            artifacts.put(coordinate.artifact(), artifact);
+        Path override = args.length == expectedArguments + 1
+                ? Path.of(args[expectedArguments]).toAbsolutePath().normalize() : null;
+        Map<String, ArtifactCatalog.Artifact> artifacts = ArtifactCatalog.loadResolved(resolvedJars);
+        for (ArtifactCatalog.Artifact artifact : artifacts.values()) {
+            ArtifactCatalog.Coordinate coordinate = artifact.coordinate();
             System.out.printf("PROVENANCE %s sha256=%s path=%s%n", coordinate.id(), artifact.sha256(), artifact.jar());
         }
         for (Variant variant : variants(root, override)) {
@@ -75,7 +75,6 @@ public final class VariantJarVerifier {
         ArchiveContents outer = ArchiveContents.read(outerBytes, variant.path().toString());
         requireEntries(outer, variant);
         Map<String, String> effectiveOwners = new HashMap<>();
-        int fonts = 0;
         int shaders = 0;
         int classes = 0;
         for (ArtifactCatalog.Artifact source : artifacts.values()) {
@@ -84,19 +83,18 @@ public final class VariantJarVerifier {
             requireShadowedEntries(outer, sourceArchive, source.coordinate().id(), variant.path());
             addEffectiveEntries(effectiveOwners, sourceArchive, source.coordinate().id());
             for (String name : sourceArchive.names()) {
-                if (name.endsWith(".ttf")) fonts++;
                 if (name.endsWith(".glsl") || name.endsWith(".spv")) shaders++;
                 if (name.endsWith(".class")) classes++;
             }
             System.out.printf("SHADOWED %s %s sourceSha256=%s%n",
                     variant.path().getFileName(), source.coordinate().id(), source.sha256());
         }
-        if (fonts == 0 || shaders == 0 || classes == 0) {
+        if (shaders == 0 || classes == 0) {
             throw new IOException("Required Lumin/Prism payload is incomplete in " + variant.path());
         }
-        System.out.printf("VARIANT_OK loader=%s minecraft=%s file=%s bytes=%d sha256=%s shadowed=8 classes=%d fonts=%d shaders=%d%n",
+        System.out.printf("VARIANT_OK loader=%s minecraft=%s file=%s bytes=%d sha256=%s shadowed=8 classes=%d shaders=%d%n",
                 variant.loader(), variant.minecraft(), variant.path(), outerBytes.length,
-                ArchiveContents.sha256(outerBytes), classes, fonts, shaders);
+                ArchiveContents.sha256(outerBytes), classes, shaders);
     }
 
     static void requireFinalArtifact(Path artifact) throws IOException {
@@ -160,7 +158,8 @@ public final class VariantJarVerifier {
             boolean shaderc = lower.contains("prism-rhi-shaderc") || lower.contains("org/lwjgl/util/shaderc/")
                     || lower.startsWith("shaderc/");
             if (lower.startsWith("meta-inf/services/") || shaderc
-                    || lower.endsWith(".dll") || lower.endsWith(".so") || lower.endsWith(".dylib")) {
+                    || lower.endsWith(".dll") || lower.endsWith(".so") || lower.endsWith(".dylib")
+                    || lower.endsWith(".ttf") || lower.endsWith(".otf")) {
                 throw new IOException("Forbidden packaged entry in " + source + ": " + name);
             }
             if (lower.endsWith(".jar")) {
