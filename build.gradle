@@ -14,19 +14,7 @@ allprojects {
 
 subprojects {
     repositories {
-        exclusiveContent {
-            forRepository {
-                maven {
-                    name = 'isolatedLuminChain'
-                    url = uri(System.getProperty('maven.repo.local', rootProject.file('.missing-m2').absolutePath))
-                    metadataSources { mavenPom(); gradleMetadata(); artifact() }
-                }
-            }
-            filter {
-                includeGroup('com.github.slmpc.lumingraphics')
-                includeGroup('com.github.slmpc.prismrhi')
-            }
-        }
+        mavenLocal()
     }
     plugins.withId('java') {
         java {
@@ -76,33 +64,44 @@ test {
     systemProperty 'maven.repo.local', System.getProperty('maven.repo.local', '')
 }
 
+def minecraftLeafSpecs = gradle.ext.minecraftLeafSpecs
+def minecraftLeafSpec = { String projectPath ->
+    def spec = minecraftLeafSpecs[projectPath]
+    if (spec == null) {
+        throw new GradleException("Unknown Minecraft leaf project path '${projectPath}'. Expected one of: ${minecraftLeafSpecs.keySet().join(', ')}")
+    }
+    spec
+}
+rootProject.ext.minecraftLeafSpecs = minecraftLeafSpecs
+rootProject.ext.minecraftLeafSpec = minecraftLeafSpec
+
 def registerGeneratedBaseline = { String suffix, String minecraftVersion, String neoformVersion,
                                   String originSha, Configuration originConfiguration ->
+    def commonSpec = minecraftLeafSpec(":mc-${minecraftVersion}:common")
+    def fabricSpec = minecraftLeafSpec(":mc-${minecraftVersion}:fabric")
     def outputDir = layout.buildDirectory.dir("generated-baselines/${minecraftVersion}")
-    def loomSources = fileTree(layout.projectDirectory.dir('.gradle/loom-cache/minecraftMaven')) {
-        include "**/${minecraftVersion}/*-${minecraftVersion}-sources.jar"
+    def loomSources = providers.provider {
+        project(fabricSpec.projectPath).tasks.named('genSourcesWithVineflower').get().sourcesOutputJar.get().asFile
     }
     def moddevSources = layout.projectDirectory.file(
-            "mc-${minecraftVersion}-common/build/moddev/artifacts/vanilla-${neoformVersion}-sources.jar")
+            "${commonSpec.physicalDir}/build/moddev/artifacts/vanilla-${neoformVersion}-sources.jar")
     def generateTask = tasks.register("generate${suffix}Baseline", JavaExec) {
         group = 'minecraft matrix'
         description = "Materializes independently generated Loom and ModDev sources for Minecraft ${minecraftVersion}."
-        dependsOn classes, ":mc-${minecraftVersion}-fabric:genSources",
-                ":mc-${minecraftVersion}-common:createMinecraftArtifacts"
-        inputs.files loomSources, moddevSources, originConfiguration
+        dependsOn classes, "${fabricSpec.projectPath}:genSources",
+                "${commonSpec.projectPath}:createMinecraftArtifacts"
+        inputs.file loomSources
+        inputs.files moddevSources, originConfiguration
         outputs.dir outputDir
         classpath = sourceSets.main.runtimeClasspath
         mainClass = 'com.github.slmpc.lumingraphics.mc.baseline.GeneratedBaselineTool'
         doFirst {
-            def matches = loomSources.files.findAll { it.isFile() }
-            if (matches.size() != 1) {
-                throw new GradleException("Expected one Loom ${minecraftVersion} sources JAR, found ${matches.size()}: ${matches}")
-            }
+            def loomSource = loomSources.get()
             delete outputDir
             setArgs(['generate', minecraftVersion, libs.versions.loom.get(), libs.versions.moddev.get(),
                     "net.neoforged:neoform:${neoformVersion}@zip",
                     "https://maven.neoforged.net/releases/net/neoforged/neoform/${neoformVersion}/neoform-${neoformVersion}.zip",
-                    originConfiguration.singleFile, originSha, matches.first(), moddevSources.asFile, outputDir.get().asFile])
+                    originConfiguration.singleFile, originSha, loomSource, moddevSources.asFile, outputDir.get().asFile])
         }
     }
     def verifyTask = tasks.register("verify${suffix}Baseline", JavaExec) {
@@ -146,10 +145,8 @@ tasks.register('verifyWrapperChecksum') {
     }
 }
 
-def loaderVariants = [
-        ':mc-26.1.2-fabric', ':mc-26.1.2-neoforge',
-        ':mc-26.2-fabric', ':mc-26.2-neoforge'
-]
+def minecraftModules = minecraftLeafSpecs.values() as List
+def loaderVariants = minecraftModules.findAll { it.role != 'common' }.collect { it.projectPath }
 
 tasks.register('verifyVariantJars', JavaExec) {
     group = 'verification'
@@ -159,7 +156,9 @@ tasks.register('verifyVariantJars', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.github.slmpc.lumingraphics.mc.packaging.VariantJarVerifier'
     doFirst {
-        def arguments = [layout.projectDirectory.asFile, System.getProperty('maven.repo.local', '')]
+        def localMavenRepository = System.getProperty('maven.repo.local',
+                new File(System.getProperty('user.home'), '.m2/repository').absolutePath)
+        def arguments = [layout.projectDirectory.asFile, localMavenRepository]
         def overrideDirectory = providers.gradleProperty('variantJarOverride').orNull
         if (overrideDirectory != null) arguments.add(file(overrideDirectory))
         setArgs(arguments)
@@ -169,8 +168,7 @@ tasks.register('verifyVariantJars', JavaExec) {
 tasks.register('buildAllVariants') {
     group = 'build'
     description = 'Builds and verifies all six modules and four final dependency-mod artifacts.'
-    dependsOn ':mc-26.1.2-common:check', ':mc-26.1.2-fabric:check', ':mc-26.1.2-neoforge:check'
-    dependsOn ':mc-26.2-common:check', ':mc-26.2-fabric:check', ':mc-26.2-neoforge:check'
+    minecraftModules.each { module -> dependsOn "${module.projectPath}:check" }
     loaderVariants.each { variant ->
         dependsOn "${variant}:clean", "${variant}:build"
         project(variant).tasks.configureEach { task ->
@@ -180,23 +178,21 @@ tasks.register('buildAllVariants') {
     dependsOn 'verifyVariantJars'
 }
 
-def bridgeSmokeVariants = [
-        ':mc-26.1.2-fabric', ':mc-26.1.2-neoforge',
-        ':mc-26.2-fabric', ':mc-26.2-neoforge'
-]
+def bridgeSmokeVariants = minecraftModules.findAll { it.role != 'common' }.collect { it.projectPath }
 def bridgeSmokeEvidence = file(System.getenv('LUMIN_MC_SMOKE_EVIDENCE_DIR') ?:
         'D:/Dev/ChenMeng/LuminGraphics/.omo/start-work/attempts/lumin-graphics-prism-rhi-migration-20260730/todo22-smokes')
 
 def validateBridgeSmokeArtifacts = { boolean negative ->
     def suffix = negative ? 'negative' : 'positive'
     bridgeSmokeVariants.each { path ->
-        def name = path.substring(1)
-        def jsonFile = new File(bridgeSmokeEvidence, "${name}-${suffix}.json")
+        def spec = minecraftLeafSpec(path)
+        def jsonFile = new File(bridgeSmokeEvidence, "${spec.stableId}-${suffix}.json")
         if (!jsonFile.isFile() || jsonFile.length() == 0) {
             throw new GradleException("Missing terminal bridge smoke artifact: ${jsonFile}")
         }
         def receipt = new groovy.json.JsonSlurper().parse(jsonFile)
-        if (receipt.pass != true || receipt.cleanup != true || receipt.mode != (negative ? receipt.mode : 'positive')) {
+        def expectedMode = negative ? spec.negativeMode : 'positive'
+        if (receipt.pass != true || receipt.cleanup != true || receipt.mode != expectedMode) {
             throw new GradleException("Bridge smoke did not pass: ${jsonFile}: ${receipt}")
         }
         if (negative) {
@@ -246,10 +242,7 @@ if (gradle.startParameter.taskNames.any { it.tokenize(':').last() in ['runAllBri
     }
 }
 
-def architectureModules = [
-        ':bridge-contract', ':mc-26.1.2-common', ':mc-26.1.2-fabric', ':mc-26.1.2-neoforge',
-        ':mc-26.2-common', ':mc-26.2-fabric', ':mc-26.2-neoforge'
-]
+def architectureModules = [':bridge-contract'] + minecraftModules.collect { it.projectPath }
 
 def architectureMatrixCheck = project(':bridge-contract').tasks.register('architectureMatrixCheck', Test) {
     group = 'verification'

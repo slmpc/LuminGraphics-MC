@@ -3,14 +3,15 @@ apply plugin: 'net.fabricmc.fabric-loom'
 
 import groovy.json.JsonSlurper
 
-def commonProject = project(":${project.name.replace('-fabric', '-common')}")
+def moduleSpec = rootProject.ext.minecraftLeafSpec.call(project.path)
+def commonProject = project(moduleSpec.commonPath)
 dependencies {
     implementation commonProject
     implementation 'com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:0.1.0'
     implementation 'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:0.1.0'
 }
 
-def minecraftVersion = project.name.replaceFirst('^mc-', '').replaceFirst('-fabric$', '')
+def minecraftVersion = moduleSpec.version
 def versionKey = minecraftVersion.replace('.', '')
 def expectedLoader = minecraftVersion == '26.1.2' ? '0.19.2' : '0.19.3'
 def expectedApi = minecraftVersion == '26.1.2' ? '0.150.0+26.1.2' : '0.156.0+26.2'
@@ -29,10 +30,10 @@ def packagedLibraries = [
 ]
 
 base {
-    archivesName = "lumin-graphics-mc-fabric-${minecraftVersion}"
+    archivesName = moduleSpec.archiveBaseName
 }
 
-def variantPackaging = configurations.create('variantPackaging') {
+def luminGraphicsShadow = configurations.create('luminGraphicsShadow') {
     canBeConsumed = false
     canBeResolved = true
     transitive = false
@@ -40,8 +41,7 @@ def variantPackaging = configurations.create('variantPackaging') {
 
 dependencies {
     packagedLibraries.each { coordinate ->
-        add(variantPackaging.name, coordinate) { transitive = false }
-        add('include', coordinate) { transitive = false }
+        add(luminGraphicsShadow.name, coordinate) { transitive = false }
     }
 }
 
@@ -54,6 +54,17 @@ sourceSets {
 
 loom {
     accessWidenerPath = file("src/main/resources/${accessWidenerName}")
+}
+
+tasks.named('compileJava') {
+    mustRunAfter tasks.named('genSourcesWithVineflower')
+}
+
+tasks.named('jar') {
+    dependsOn configurations.luminGraphicsShadow
+    from { configurations.luminGraphicsShadow.collect { zipTree(it) } }
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/jars/**', 'META-INF/jarjar/**'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 tasks.register('verifyFabricWiring') {
@@ -91,7 +102,7 @@ tasks.register('verifyFabricWiring') {
         if (metadata.depends != expectedDependencies) {
             throw new GradleException("Fabric dependency constraints mismatch: ${metadata.depends}")
         }
-        def buildText = project.file('build.gradle').getText('UTF-8')
+        def buildText = project.file('build.gradle.kts').getText('UTF-8')
         if (!buildText.contains("fabric-loader:${expectedLoader}") ||
                 !buildText.contains("fabric-api:${expectedApi}")) {
             throw new GradleException("Fabric dependency pins mismatch for ${minecraftVersion}")
@@ -164,16 +175,12 @@ tasks.named('check') { dependsOn 'verifyFabricWiring', verifyFabricArtifact }
 def todo22TaskNames = gradle.startParameter.taskNames.collect { it.tokenize(':').last() }
 if (todo22TaskNames.any { it in ['runAllBridgeSmokes', 'runAllBridgeNegativeSmokes'] }) {
     def negative = todo22TaskNames.contains('runAllBridgeNegativeSmokes')
-    def negativeModes = [
-            'mc-26.1.2-fabric': 'wrong-thread',
-            'mc-26.2-fabric': 'wrong-context'
-    ]
     def evidenceDir = System.getenv('LUMIN_MC_SMOKE_EVIDENCE_DIR') ?:
             'D:/Dev/ChenMeng/LuminGraphics/.omo/start-work/attempts/lumin-graphics-prism-rhi-migration-20260730/todo22-smokes'
     def smokeRunDir = layout.buildDirectory.dir("todo22-run-${negative ? 'negative' : 'positive'}")
     tasks.named('runClient').configure {
-        def smokeOutput = new File(evidenceDir, "${project.name}-${negative ? 'negative' : 'positive'}.json")
-        environment 'LUMIN_MC_SMOKE_MODE', negative ? negativeModes[project.name] : 'positive'
+        def smokeOutput = new File(evidenceDir, "${moduleSpec.stableId}-${negative ? 'negative' : 'positive'}.json")
+        environment 'LUMIN_MC_SMOKE_MODE', negative ? moduleSpec.negativeMode : 'positive'
         environment 'LUMIN_MC_SMOKE_OUTPUT', smokeOutput.absolutePath
         doFirst {
             delete smokeOutput

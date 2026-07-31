@@ -12,7 +12,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -72,20 +71,6 @@ final class ArchiveContents {
 
     Set<String> names() {
         return Collections.unmodifiableSet(entries.keySet());
-    }
-
-    void verifyFabricWrapper(ArchiveContents source, String nestedName) throws IOException {
-        Set<String> additions = new TreeSet<>(entries.keySet());
-        additions.removeAll(source.entries.keySet());
-        if (!additions.equals(Set.of("fabric.mod.json"))) {
-            throw new IOException("Fabric JIJ changed entry set for " + nestedName + ": " + additions);
-        }
-        for (Map.Entry<String, byte[]> sourceEntry : source.entries.entrySet()) {
-            byte[] actual = entries.get(sourceEntry.getKey());
-            if (actual == null || !MessageDigest.isEqual(sourceEntry.getValue(), actual)) {
-                throw new IOException("Fabric JIJ changed source entry " + nestedName + "!/" + sourceEntry.getKey());
-            }
-        }
     }
 
     static String sha256(byte[] bytes) {

@@ -20,9 +20,10 @@ This module implements the 26.2 bridge in
 
 Tests are under `src/test/java`. The versioned target inventory is
 `src/main/resources/lumin-graphics-mc-262.access-targets.properties`; loader
-metadata is in the matching 26.2 Fabric AW and NeoForge AT resources.
+metadata is in `../fabric/src/main/resources/lumin_graphics_mc_262.accesswidener`
+and `../neoforge/src/main/resources/META-INF/accesstransformer.cfg`.
 
-Run `..\\gradlew.bat :mc-26.2-common:test` for targeted common validation.
+Run `..\\..\\gradlew.bat :mc-26.2:common:test` for targeted common validation.
 
 ## Pitfalls
 

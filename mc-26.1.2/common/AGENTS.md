@@ -19,10 +19,10 @@ This module implements the 26.1.2 bridge in
 ## Tests And Assets
 
 Module tests live in `src/test/java`. Loader resources supply the real access
-metadata: `../mc-26.1.2-fabric/.../lumin_graphics_mc_2612.accesswidener` and
-`../mc-26.1.2-neoforge/.../META-INF/accesstransformer.cfg`.
+metadata: `../fabric/src/main/resources/lumin_graphics_mc_2612.accesswidener` and
+`../neoforge/src/main/resources/META-INF/accesstransformer.cfg`.
 
-Run `..\\gradlew.bat :mc-26.1.2-common:test` for targeted common validation.
+Run `..\\..\\gradlew.bat :mc-26.1.2:common:test` for targeted common validation.
 
 ## Pitfalls
 

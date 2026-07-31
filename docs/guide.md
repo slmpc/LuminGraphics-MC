@@ -10,6 +10,10 @@ loader artifact matching both version and loader:
 `lumin-graphics-mc-neoforge-26.2`. The `bridge-contract` and versioned common
 JARs are implementation dependencies, not final mods.
 
+Every final loader artifact directly shadows the LuminGraphics and required
+PrismRHI payload. It contains their classes, shaders, and fonts directly, with
+no Fabric JIJ or NeoForge jarJar dependency archives.
+
 ## Bridge Contract And Matrix
 
 `bridge-contract` owns `BridgeMatrix`, `BridgeLease`, `BridgeMode`, and
@@ -27,8 +31,8 @@ behavior stated in their row.
 ## Access And Versions
 
 Fabric uses the versioned access wideners:
-`mc-26.1.2-fabric/src/main/resources/lumin_graphics_mc_2612.accesswidener` and
-`mc-26.2-fabric/src/main/resources/lumin_graphics_mc_262.accesswidener`.
+`../mc-26.1.2/fabric/src/main/resources/lumin_graphics_mc_2612.accesswidener` and
+`../mc-26.2/fabric/src/main/resources/lumin_graphics_mc_262.accesswidener`.
 NeoForge uses the matching `META-INF/accesstransformer.cfg` files. Mixins are
 versioned in each common module; 26.2 additionally inventories targets in
 `lumin-graphics-mc-262.access-targets.properties`. Do not use reflection.

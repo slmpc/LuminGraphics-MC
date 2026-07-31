@@ -1,7 +1,5 @@
 package com.github.slmpc.lumingraphics.mc.packaging;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.IOException;
@@ -15,7 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
+import java.security.MessageDigest;
 import org.tomlj.Toml;
 import org.tomlj.TomlArray;
 import org.tomlj.TomlParseResult;
@@ -43,7 +41,7 @@ public final class VariantJarVerifier {
         for (Variant variant : variants(root, override)) {
             verifyVariant(variant, artifacts);
         }
-        System.out.println("VARIANT_MATRIX_OK variants=4 nestedArtifacts=32 version=0.1.0");
+        System.out.println("VARIANT_MATRIX_OK variants=4 shadowedArtifacts=32 version=0.1.0");
     }
 
     private static List<Variant> variants(Path root, Path override) {
@@ -56,7 +54,7 @@ public final class VariantJarVerifier {
 
     private static Variant variant(Path root, Path override, String loader, String minecraft, String key, String packageKey) {
         String fileName = "lumin-graphics-mc-" + loader + '-' + minecraft + "-0.1.0.jar";
-        Path standard = root.resolve("mc-" + minecraft + '-' + loader).resolve("build/libs").resolve(fileName);
+        Path standard = standardArtifactPath(root, loader, minecraft);
         Path artifact = override == null ? standard : override.resolve(fileName);
         String entrypoint = loader.equals("fabric")
                 ? "com/github/slmpc/lumingraphics/mc/fabric/v" + key + "/LuminGraphicsFabricClient.class"
@@ -66,48 +64,45 @@ public final class VariantJarVerifier {
         return new Variant(loader, minecraft, artifact, entrypoint, common, mixin);
     }
 
+    static Path standardArtifactPath(Path root, String loader, String minecraft) {
+        String fileName = "lumin-graphics-mc-" + loader + '-' + minecraft + "-0.1.0.jar";
+        return root.resolve("mc-" + minecraft).resolve(loader).resolve("build/libs").resolve(fileName);
+    }
+
     private static void verifyVariant(Variant variant, Map<String, ArtifactCatalog.Artifact> artifacts) throws Exception {
-        if (!Files.isRegularFile(variant.path())) {
-            throw new IOException("Final variant artifact is missing: " + variant.path());
-        }
+        requireFinalArtifact(variant.path());
         byte[] outerBytes = Files.readAllBytes(variant.path());
         ArchiveContents outer = ArchiveContents.read(outerBytes, variant.path().toString());
         requireEntries(outer, variant);
-        Map<String, byte[]> nested = variant.loader().equals("fabric")
-                ? fabricNested(outer, variant) : neoForgeNested(outer, variant);
-        if (!nested.keySet().equals(artifacts.keySet())) {
-            throw new IOException("Nested artifact set mismatch in " + variant.path() + ": " + nested.keySet());
-        }
         Map<String, String> effectiveOwners = new HashMap<>();
-        addEffectiveEntries(effectiveOwners, outer, variant.path().getFileName().toString(), true);
         int fonts = 0;
         int shaders = 0;
         int classes = 0;
-        for (Map.Entry<String, byte[]> nestedEntry : nested.entrySet()) {
-            ArtifactCatalog.Artifact source = artifacts.get(nestedEntry.getKey());
-            ArchiveContents packaged = ArchiveContents.read(nestedEntry.getValue(), nestedEntry.getKey());
-            if (variant.loader().equals("fabric")) {
-                packaged.verifyFabricWrapper(ArchiveContents.read(source.bytes(), source.jar().toString()), nestedEntry.getKey());
-            } else if (!source.sha256().equals(ArchiveContents.sha256(nestedEntry.getValue()))) {
-                throw new IOException("NeoForge jarJar hash differs from isolated source for " + nestedEntry.getKey());
-            }
-            rejectForbidden(packaged, nestedEntry.getKey());
-            addEffectiveEntries(effectiveOwners, packaged, nestedEntry.getKey(), false);
-            for (String name : packaged.names()) {
+        for (ArtifactCatalog.Artifact source : artifacts.values()) {
+            ArchiveContents sourceArchive = ArchiveContents.read(source.bytes(), source.jar().toString());
+            rejectForbidden(sourceArchive, source.coordinate().id());
+            requireShadowedEntries(outer, sourceArchive, source.coordinate().id(), variant.path());
+            addEffectiveEntries(effectiveOwners, sourceArchive, source.coordinate().id());
+            for (String name : sourceArchive.names()) {
                 if (name.endsWith(".ttf")) fonts++;
                 if (name.endsWith(".glsl") || name.endsWith(".spv")) shaders++;
                 if (name.endsWith(".class")) classes++;
             }
-            System.out.printf("NESTED %s %s bytes=%d sourceSha256=%s packagedSha256=%s%n",
-                    variant.path().getFileName(), source.coordinate().id(), nestedEntry.getValue().length,
-                    source.sha256(), ArchiveContents.sha256(nestedEntry.getValue()));
+            System.out.printf("SHADOWED %s %s sourceSha256=%s%n",
+                    variant.path().getFileName(), source.coordinate().id(), source.sha256());
         }
         if (fonts == 0 || shaders == 0 || classes == 0) {
             throw new IOException("Required Lumin/Prism payload is incomplete in " + variant.path());
         }
-        System.out.printf("VARIANT_OK loader=%s minecraft=%s file=%s bytes=%d sha256=%s nested=8 classes=%d fonts=%d shaders=%d%n",
+        System.out.printf("VARIANT_OK loader=%s minecraft=%s file=%s bytes=%d sha256=%s shadowed=8 classes=%d fonts=%d shaders=%d%n",
                 variant.loader(), variant.minecraft(), variant.path(), outerBytes.length,
                 ArchiveContents.sha256(outerBytes), classes, fonts, shaders);
+    }
+
+    static void requireFinalArtifact(Path artifact) throws IOException {
+        if (!Files.isRegularFile(artifact)) {
+            throw new IOException("Final variant artifact is missing: " + artifact);
+        }
     }
 
     private static void requireEntries(ArchiveContents outer, Variant variant) throws IOException {
@@ -129,47 +124,6 @@ public final class VariantJarVerifier {
         rejectForbidden(outer, variant.path().toString());
     }
 
-    private static Map<String, byte[]> fabricNested(ArchiveContents outer, Variant variant) throws IOException {
-        JsonObject metadata = parseJson(outer.required("fabric.mod.json"));
-        JsonArray jars = metadata.getAsJsonArray("jars");
-        if (jars == null || jars.size() != ArtifactCatalog.EXPECTED.size()) {
-            throw new IOException("Fabric JIJ metadata must contain exactly eight jars: " + variant.path());
-        }
-        Map<String, byte[]> nested = new TreeMap<>();
-        for (JsonElement element : jars) {
-            String path = element.getAsJsonObject().get("file").getAsString();
-            addNested(nested, artifactName(path), outer.required(path), variant.path());
-        }
-        return nested;
-    }
-
-    private static Map<String, byte[]> neoForgeNested(ArchiveContents outer, Variant variant) throws IOException {
-        JsonObject metadata = parseJson(outer.required("META-INF/jarjar/metadata.json"));
-        JsonArray jars = metadata.getAsJsonArray("jars");
-        if (jars == null || jars.size() != ArtifactCatalog.EXPECTED.size()) {
-            throw new IOException("NeoForge jarJar metadata must contain exactly eight jars: " + variant.path());
-        }
-        Map<String, byte[]> nested = new TreeMap<>();
-        for (JsonElement element : jars) {
-            JsonObject item = element.getAsJsonObject();
-            JsonObject identifier = item.getAsJsonObject("identifier");
-            JsonObject version = item.getAsJsonObject("version");
-            String artifact = identifier.get("artifact").getAsString();
-            ArtifactCatalog.Coordinate expected = ArtifactCatalog.EXPECTED.stream()
-                    .filter(value -> value.artifact().equals(artifact)).findFirst()
-                    .orElseThrow(() -> new IOException("Unexpected jarJar artifact: " + artifact));
-            requireText(identifier, "group", expected.group(), variant.path());
-            requireText(version, "artifactVersion", ArtifactCatalog.VERSION, variant.path());
-            requireText(version, "range", "[0.1.0]", variant.path());
-            String path = item.get("path").getAsString();
-            if (!path.endsWith('/' + artifact + '-' + ArtifactCatalog.VERSION + ".jar")) {
-                throw new IOException("jarJar path/version mismatch in " + variant.path() + ": " + path);
-            }
-            addNested(nested, artifact, outer.required(path), variant.path());
-        }
-        return nested;
-    }
-
     private static void verifyNeoForgeToml(byte[] bytes, Variant variant) throws IOException {
         TomlParseResult result = Toml.parse(new String(bytes, StandardCharsets.UTF_8));
         if (result.hasErrors()) {
@@ -185,19 +139,19 @@ public final class VariantJarVerifier {
         }
     }
 
-    private static void addNested(Map<String, byte[]> nested, String artifact, byte[] bytes, Path source) throws IOException {
-        if (nested.putIfAbsent(artifact, bytes) != null) {
-            throw new IOException("Duplicate nested artifact in " + source + ": " + artifact);
+    private static void requireShadowedEntries(ArchiveContents outer, ArchiveContents source,
+                                               String coordinate, Path destination) throws IOException {
+        for (String name : source.names()) {
+            String lower = name.toLowerCase(java.util.Locale.ROOT);
+            if (name.endsWith("/") || lower.startsWith("meta-inf/")) {
+                continue;
+            }
+            byte[] expected = source.required(name);
+            byte[] actual = outer.required(name);
+            if (!MessageDigest.isEqual(expected, actual)) {
+                throw new IOException("Shadowed entry differs from " + coordinate + " in " + destination + ": " + name);
+            }
         }
-    }
-
-    private static String artifactName(String path) throws IOException {
-        String fileName = Path.of(path).getFileName().toString();
-        String suffix = '-' + ArtifactCatalog.VERSION + ".jar";
-        if (!fileName.endsWith(suffix)) {
-            throw new IOException("Nested artifact does not use exact 0.1.0: " + path);
-        }
-        return fileName.substring(0, fileName.length() - suffix.length());
     }
 
     private static void rejectForbidden(ArchiveContents archive, String source) throws IOException {
@@ -209,19 +163,17 @@ public final class VariantJarVerifier {
                     || lower.endsWith(".dll") || lower.endsWith(".so") || lower.endsWith(".dylib")) {
                 throw new IOException("Forbidden packaged entry in " + source + ": " + name);
             }
-            if (lower.endsWith(".jar") && !lower.startsWith("meta-inf/jars/")
-                    && !lower.startsWith("meta-inf/jarjar/")) {
-                throw new IOException("Unregistered nested JAR in " + source + ": " + name);
+            if (lower.endsWith(".jar")) {
+                throw new IOException("Nested JAR is forbidden in direct-shadow artifact " + source + ": " + name);
             }
         }
     }
 
     private static void addEffectiveEntries(Map<String, String> owners, ArchiveContents archive,
-                                            String owner, boolean outer) throws IOException {
+                                            String owner) throws IOException {
         for (String name : archive.names()) {
             String lower = name.toLowerCase(java.util.Locale.ROOT);
-            if (name.endsWith("/") || lower.startsWith("meta-inf/") || lower.equals("fabric.mod.json")
-                    || (outer && lower.endsWith(".jar"))) {
+            if (name.endsWith("/") || lower.startsWith("meta-inf/") || lower.equals("fabric.mod.json")) {
                 continue;
             }
             String previous = owners.putIfAbsent(name, owner);

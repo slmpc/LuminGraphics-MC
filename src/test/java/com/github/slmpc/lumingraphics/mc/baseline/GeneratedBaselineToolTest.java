@@ -59,6 +59,73 @@ final class GeneratedBaselineToolTest {
     }
 
     @Test
+    void generationAllowsAccessWidenerVisibilityDifference() throws Exception {
+        Path loom = sourceJarWithConstructorVisibility("loom.jar", "GlBuffer", "public");
+        Path moddev = sourceJarWithConstructorVisibility("moddev.jar", "GlBuffer", "protected");
+        assertDoesNotThrow(() -> generate(loom, moddev, false));
+    }
+
+    @Test
+    void generationAllowsEquivalentNestedTypeQualification() throws Exception {
+        Path loom = sourceJarWithTypeSource("loom.jar", "GlTexture", """
+                package example;
+                import example.FrameBufferCache.CacheKey;
+                public class GlTexture { CacheKey key; void accept(CacheKey key) {} }
+                """);
+        Path moddev = sourceJarWithTypeSource("moddev.jar", "GlTexture", """
+                package example;
+                public class GlTexture {
+                    FrameBufferCache.CacheKey key;
+                    void accept(FrameBufferCache.CacheKey key) {}
+                }
+                """);
+        assertDoesNotThrow(() -> generate(loom, moddev, false));
+    }
+
+    @Test
+    void generationAllowsEquivalentTypeAnnotationPlacement() throws Exception {
+        Path loom = sourceJarWithTypeSource("loom.jar", "RenderPass", """
+                package example;
+                public class RenderPass { void accept(@Nullable Outer.Inner value) {} }
+                """);
+        Path moddev = sourceJarWithTypeSource("moddev.jar", "RenderPass", """
+                package example;
+                public class RenderPass { void accept(Outer.@Nullable Inner value) {} }
+                """);
+        assertDoesNotThrow(() -> generate(loom, moddev, false));
+    }
+
+    @Test
+    void generationFailsWhenMethodAccessContractDiffers() throws Exception {
+        Path loom = sourceJarWithTypeSource("loom.jar", "GlBuffer", """
+                package example;
+                public class GlBuffer { public void run() {} }
+                """);
+        Path moddev = sourceJarWithTypeSource("moddev.jar", "GlBuffer", """
+                package example;
+                public class GlBuffer { protected void run() {} }
+                """);
+        var error = assertThrows(IllegalStateException.class, () -> generate(loom, moddev, false));
+        assertTrue(error.getMessage().startsWith("SEMANTIC_DIVERGENCE:"), error::getMessage);
+    }
+
+    @Test
+    void generationFailsWhenDistinctImportedTypesShareSimpleName() throws Exception {
+        Path loom = sourceJarWithTypeSource("loom.jar", "GlTexture", """
+                package example;
+                import alpha.CacheKey;
+                public class GlTexture { CacheKey key; }
+                """);
+        Path moddev = sourceJarWithTypeSource("moddev.jar", "GlTexture", """
+                package example;
+                import beta.CacheKey;
+                public class GlTexture { CacheKey key; }
+                """);
+        var error = assertThrows(IllegalStateException.class, () -> generate(loom, moddev, false));
+        assertTrue(error.getMessage().startsWith("SEMANTIC_DIVERGENCE:"), error::getMessage);
+    }
+
+    @Test
     void generationFailsWhenSelectedSourceIsAbsent() throws Exception {
         Path loom = sourceJar("loom.jar", "GpuBuffer", false);
         Path moddev = sourceJar("moddev.jar", null, false);
@@ -116,6 +183,36 @@ final class GeneratedBaselineToolTest {
                 String extra = type.equals(specialType) && divergent ? " public String changed() { return \"x\"; }" : "";
                 output.write(("package example; public class " + type
                         + " { public int value; public void run() {}" + extra + " }").getBytes(StandardCharsets.UTF_8));
+                output.closeEntry();
+            }
+        }
+        return path;
+    }
+
+    private Path sourceJarWithConstructorVisibility(String name, String constructorType, String visibility)
+            throws IOException {
+        Path path = temporary.resolve(name);
+        try (var output = new JarOutputStream(Files.newOutputStream(path))) {
+            for (String type : GeneratedBaselineTool.REQUIRED_TYPES) {
+                output.putNextEntry(new JarEntry("example/" + type + ".java"));
+                String constructor = type.equals(constructorType) ? " " + visibility + " " + type + "() {}" : "";
+                output.write(("package example; public class " + type
+                        + " { public int value; public void run() {}" + constructor + " }")
+                        .getBytes(StandardCharsets.UTF_8));
+                output.closeEntry();
+            }
+        }
+        return path;
+    }
+
+    private Path sourceJarWithTypeSource(String name, String specialType, String specialSource) throws IOException {
+        Path path = temporary.resolve(name);
+        try (var output = new JarOutputStream(Files.newOutputStream(path))) {
+            for (String type : GeneratedBaselineTool.REQUIRED_TYPES) {
+                output.putNextEntry(new JarEntry("example/" + type + ".java"));
+                String source = type.equals(specialType) ? specialSource
+                        : "package example; public class " + type + " { public int value; public void run() {} }";
+                output.write(source.getBytes(StandardCharsets.UTF_8));
                 output.closeEntry();
             }
         }

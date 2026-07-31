@@ -10,10 +10,8 @@ artifacts only; no public registry workflow is documented.
 
 ```text
 bridge-contract/          shared bridge ownership/matrix contracts
-mc-26.1.2-common/         Minecraft 26.1.2 bridge implementation
-mc-26.2-common/           Minecraft 26.2 bridge implementation
-mc-26.1.2-{fabric,neoforge}/ loader packaging and access metadata
-mc-26.2-{fabric,neoforge}/   loader packaging and access metadata
+mc-26.1.2/{common,fabric,neoforge}/ Minecraft 26.1.2 bridge and loader modules
+mc-26.2/{common,fabric,neoforge}/   Minecraft 26.2 bridge and loader modules
 docs/bridge-matrix.csv    168-row capability/provenance matrix
 reference/                checked source references for version comparison
 ```
@@ -24,8 +22,8 @@ reference/                checked source references for version comparison
 | --- | --- | --- |
 | Contract types | `bridge-contract/src/main/java/.../bridge` | Ownership, mode, matrix and leases. |
 | Capability matrix | `docs/bridge-matrix.csv` | Source of supported/unsupported combinations. |
-| 26.1.2 bridge | `mc-26.1.2-common/src/main/java/.../v2612` | Access, bridge, mixin, smoke, text. |
-| 26.2 bridge | `mc-26.2-common/src/main/java/.../v262` | Version-specific access target changes. |
+| 26.1.2 bridge | `mc-26.1.2/common/src/main/java/.../v2612` | Access, bridge, mixin, smoke, text. |
+| 26.2 bridge | `mc-26.2/common/src/main/java/.../v262` | Version-specific access target changes. |
 | Loader metadata | versioned Fabric/NeoForge `src/main/resources` | AW, AT, mixin and mod descriptors. |
 | Smoke wiring | `build.gradle` | Positive and negative matrix smokes. |
 
