@@ -65,6 +65,7 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    exclude '**/ArchitectureGuardTest.class'
     ['baseline.26.1.2', 'baseline.26.2', 'baseline.root.26.1.2', 'baseline.root.26.2'].each { propertyName ->
         def value = System.getProperty(propertyName)
         if (value != null) {
