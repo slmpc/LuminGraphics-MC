@@ -1,6 +1,7 @@
 package com.github.slmpc.lumingraphics.mc.v2612.bridge;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -72,6 +73,28 @@ class AccessBytecode2612Test {
                 shape("com.github.slmpc.lumingraphics.mc.v2612.mixin.GlProgramBorrowedMixin").injectMethods);
     }
 
+    @Test
+    void compiledWindowHintMixinRaisesTheMinecraftContextToTheLuminMinimum() throws Exception {
+        Shape mixin = shape("com.github.slmpc.lumingraphics.mc.v2612.mixin.GlBackendContextVersionMixin2612");
+        assertEquals(Set.of("lumin$requireOpenGl41(Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfo;)V"),
+                mixin.injectMethods);
+    }
+
+    @Test
+    void compiledGameRendererMixinSubmitsLuminBeforeMinecraftBlitsTheMainTarget() throws Exception {
+        Shape mixin = shape("com.github.slmpc.lumingraphics.mc.v2612.mixin.GameRendererFrameMixin2612");
+        assertEquals(Set.of("lumin$submitBeforeMainTargetBlit(Lnet/minecraft/client/DeltaTracker;Z"
+                        + "Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfo;)V"),
+                mixin.injectMethods);
+    }
+
+    @Test
+    void mainRenderTargetBorrowingOmitsTheUnsupportedDepth32Attachment() throws Exception {
+        Shape bridge = shape("com.github.slmpc.lumingraphics.mc.v2612.runtime.MinecraftRenderTargetBridge2612");
+        assertFalse(bridge.invokedMethods.stream().anyMatch(
+                invocation -> invocation.contains("RenderTarget.getDepthTextureView")));
+    }
+
     private static Shape shape(Class<?> type) throws IOException {
         return shape(type.getName());
     }
@@ -98,9 +121,13 @@ class AccessBytecode2612Test {
                             }
                             return null;
                         }
+                        @Override public void visitMethodInsn(int opcode, String owner, String name,
+                                                              String descriptor, boolean isInterface) {
+                            shape.invokedMethods.add(owner + '.' + name + descriptor);
+                        }
                     };
                 }
-            }, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG);
+            }, ClassReader.SKIP_DEBUG);
         }
         return shape;
     }
@@ -109,5 +136,6 @@ class AccessBytecode2612Test {
         private final Set<String> fields = new HashSet<>();
         private final Set<String> methods = new HashSet<>();
         private final Set<String> injectMethods = new HashSet<>();
+        private final Set<String> invokedMethods = new HashSet<>();
     }
 }

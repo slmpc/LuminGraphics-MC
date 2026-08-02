@@ -18,6 +18,7 @@ import com.github.slmpc.prismrhi.resource.RhiImage;
 import com.github.slmpc.prismrhi.resource.RhiImageAspect;
 import com.github.slmpc.prismrhi.resource.RhiImageView;
 import com.github.slmpc.prismrhi.resource.RhiNativeObject;
+import com.github.slmpc.prismrhi.resource.RhiNativeObjects;
 import com.github.slmpc.prismrhi.resource.RhiNativeObjectType;
 import com.github.slmpc.prismrhi.resource.RhiOwnership;
 import com.github.slmpc.prismrhi.resource.RhiSampler;
@@ -113,7 +114,8 @@ final class BridgeTestFixtures2612 {
     }
 
     static RhiImageView imageView(RhiImage image, RhiContextIdentity identity, RhiInvalidationToken token) {
-        return resource(RhiImageView.class, OpenGlNativeObjectTypes.TEXTURE, 105, identity, token,
+        return resource(RhiImageView.class, OpenGlNativeObjectTypes.TEXTURE,
+                RhiNativeObjects.requireValue(image, OpenGlNativeObjectTypes.TEXTURE), identity, token,
                 Map.of("image", image, "format", image.format(), "aspects", Set.of(RhiImageAspect.COLOR)));
     }
 

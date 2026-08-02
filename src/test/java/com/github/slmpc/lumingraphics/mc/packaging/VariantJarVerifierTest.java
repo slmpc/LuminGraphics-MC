@@ -3,6 +3,7 @@ package com.github.slmpc.lumingraphics.mc.packaging;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -42,9 +43,17 @@ final class VariantJarVerifierTest {
         assertEquals("Final variant artifact is missing: " + expected, failure.getMessage());
     }
 
+    @Test
+    void shadowCatalogIncludesTheBridgeContractInEachLoaderArtifact() {
+        assertTrue(ArtifactCatalog.EXPECTED.stream().anyMatch(coordinate ->
+                coordinate.group().equals("com.github.slmpc.lumingraphics.mc")
+                        && coordinate.artifact().equals("bridge-contract")
+                        && coordinate.version().equals("1.2.0")));
+    }
+
     private record VariantPath(String loader, String minecraft) {
         private String fileName() {
-            return "lumin-graphics-mc-" + loader + '-' + minecraft + "-1.0.0.jar";
+            return "lumin-graphics-mc-" + loader + '-' + minecraft + "-1.2.0.jar";
         }
     }
 }

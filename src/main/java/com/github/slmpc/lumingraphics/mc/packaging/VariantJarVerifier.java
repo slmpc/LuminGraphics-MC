@@ -41,7 +41,7 @@ public final class VariantJarVerifier {
         for (Variant variant : variants(root, override)) {
             verifyVariant(variant, artifacts);
         }
-        System.out.println("VARIANT_MATRIX_OK variants=4 shadowedArtifacts=32 version=1.0.0");
+        System.out.println("VARIANT_MATRIX_OK variants=4 shadowedArtifacts=36 version=1.2.0");
     }
 
     private static List<Variant> variants(Path root, Path override) {
@@ -53,7 +53,7 @@ public final class VariantJarVerifier {
     }
 
     private static Variant variant(Path root, Path override, String loader, String minecraft, String key, String packageKey) {
-        String fileName = "lumin-graphics-mc-" + loader + '-' + minecraft + "-1.0.0.jar";
+        String fileName = "lumin-graphics-mc-" + loader + '-' + minecraft + "-1.2.0.jar";
         Path standard = standardArtifactPath(root, loader, minecraft);
         Path artifact = override == null ? standard : override.resolve(fileName);
         String entrypoint = loader.equals("fabric")
@@ -65,7 +65,7 @@ public final class VariantJarVerifier {
     }
 
     static Path standardArtifactPath(Path root, String loader, String minecraft) {
-        String fileName = "lumin-graphics-mc-" + loader + '-' + minecraft + "-1.0.0.jar";
+        String fileName = "lumin-graphics-mc-" + loader + '-' + minecraft + "-1.2.0.jar";
         return root.resolve("mc-" + minecraft).resolve(loader).resolve("build/libs").resolve(fileName);
     }
 
@@ -105,12 +105,16 @@ public final class VariantJarVerifier {
 
     private static void requireEntries(ArchiveContents outer, Variant variant) throws IOException {
         List<String> required = new ArrayList<>(List.of(variant.entrypoint(), variant.commonBridge(), variant.mixin()));
+        required.add("com/github/slmpc/lumingraphics/mc/bridge/BridgeResult.class");
+        if (variant.minecraft().equals("26.1.2")) {
+            required.add("com/github/slmpc/lumingraphics/mc/v2612/runtime/MinecraftGraphicsRuntime2612.class");
+        }
         if (variant.loader().equals("fabric")) {
             required.add("fabric.mod.json");
             required.add("lumin_graphics_mc_" + variant.minecraft().replace(".", "") + ".accesswidener");
             JsonObject metadata = parseJson(outer.required("fabric.mod.json"));
             requireText(metadata, "id", "lumin_graphics_mc", variant.path());
-            requireText(metadata, "version", "1.0.0+mc" + variant.minecraft(), variant.path());
+            requireText(metadata, "version", "1.2.0+mc" + variant.minecraft(), variant.path());
         } else {
             required.add("META-INF/neoforge.mods.toml");
             required.add("META-INF/accesstransformer.cfg");
@@ -132,7 +136,7 @@ public final class VariantJarVerifier {
             throw new IOException("NeoForge TOML must define exactly one mod: " + variant.path());
         }
         if (!"lumin_graphics_mc".equals(mod.getString("modId"))
-                || !("1.0.0+mc" + variant.minecraft()).equals(mod.getString("version"))) {
+                || !("1.2.0+mc" + variant.minecraft()).equals(mod.getString("version"))) {
             throw new IOException("NeoForge mod id/version mismatch: " + variant.path());
         }
     }

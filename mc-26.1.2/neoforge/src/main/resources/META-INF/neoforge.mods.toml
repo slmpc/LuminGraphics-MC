@@ -4,9 +4,9 @@ license="LGPL-3.0-only"
 
 [[mods]]
 modId="lumin_graphics_mc"
-version="1.0.0+mc26.1.2"
+version="1.1.0-SNAPSHOT+mc26.1.2"
 displayName="Lumin Graphics MC"
-description='''Minecraft-owned rendering context bridge for Lumin Graphics.'''
+description='''Minecraft 26.1.2 OpenGL binding and owned Lumin Graphics runtime.'''
 displayTest="IGNORE_SERVER_VERSION"
 
 [features.lumin_graphics_mc]

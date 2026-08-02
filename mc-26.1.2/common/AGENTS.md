@@ -10,6 +10,9 @@ This module implements the 26.1.2 bridge in
 | Area | Location |
 | --- | --- |
 | Bridge adapters | `src/main/java/.../v2612/bridge/Blaze3DBridge2612.java` |
+| Public runtime | `src/main/java/.../v2612/runtime/MinecraftGraphicsRuntime2612.java` |
+| UI/font runtime | `src/main/java/.../v2612/runtime/MinecraftUiRuntime2612.java` |
+| Native GUI extraction bridge | `src/main/java/.../v2612/runtime/MinecraftGuiExtractionBridge2612.java` |
 | Access contracts | `src/main/java/.../v2612/access/` |
 | Mixin access | `src/main/java/.../v2612/mixin/GlAccess2612.java` |
 | Borrowed wrappers | `src/main/java/.../v2612/mixin/*BorrowedMixin.java` |

@@ -22,10 +22,11 @@ extensions.getByName("neoForge").withGroovyBuilder {
 }
 
 dependencies {
-    add("api", "com.github.slmpc.prismrhi:prism-rhi-backend-opengl-common:0.1.0")
-    add("implementation", "com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:0.1.0")
-    add("implementation", "com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:0.1.0")
-    add("api", "com.github.slmpc.lumingraphics:lumin-graphics-text:1.0.0")
+    add("api", "com.github.slmpc.prismrhi:prism-rhi-backend-opengl-common:0.1.1")
+    add("implementation", "com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:0.1.1")
+    add("implementation", "com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:0.1.1")
+    add("api", "com.github.slmpc.lumingraphics:lumin-graphics-text:${libs.versions.lumin.get()}")
+    add("api", "com.github.slmpc.lumingraphics:lumin-graphics-ui:${libs.versions.lumin.get()}")
     add("compileOnly", "org.spongepowered:mixin:0.8.7")
     add("testImplementation", libs.junit)
     add("testImplementation", "org.ow2.asm:asm:9.9")

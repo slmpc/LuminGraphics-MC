@@ -13,15 +13,16 @@ def entrypointClass = "com.github.slmpc.lumingraphics.mc.${packageKey}.neoforge.
 def mixinConfigName = minecraftVersion == '26.1.2' ?
         'lumin_graphics_mc_2612.mixins.json' : 'lumin-graphics-mc-262.mixins.json'
 def accessTransformer = layout.projectDirectory.file('src/main/resources/META-INF/accesstransformer.cfg')
+def luminVersion = libs.versions.lumin.get()
 def packagedLibraries = [
-        'com.github.slmpc.lumingraphics:lumin-graphics-core:1.0.0',
-        'com.github.slmpc.lumingraphics:lumin-graphics-render:1.0.0',
-        'com.github.slmpc.lumingraphics:lumin-graphics-text:1.0.0',
-        'com.github.slmpc.lumingraphics:lumin-graphics-ui:1.0.0',
-        'com.github.slmpc.prismrhi:prism-rhi-core:0.1.0',
-        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-common:0.1.0',
-        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:0.1.0',
-        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:0.1.0'
+        "com.github.slmpc.lumingraphics:lumin-graphics-core:${luminVersion}",
+        "com.github.slmpc.lumingraphics:lumin-graphics-render:${luminVersion}",
+        "com.github.slmpc.lumingraphics:lumin-graphics-text:${luminVersion}",
+        "com.github.slmpc.lumingraphics:lumin-graphics-ui:${luminVersion}",
+        'com.github.slmpc.prismrhi:prism-rhi-core:0.1.1',
+        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-common:0.1.1',
+        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:0.1.1',
+        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:0.1.1'
 ]
 
 base {
@@ -35,7 +36,8 @@ def luminGraphicsShadow = configurations.create('luminGraphicsShadow') {
 }
 
 dependencies {
-    implementation commonProject
+    compileOnly commonProject
+    add(luminGraphicsShadow.name, project(':bridge-contract')) { transitive = false }
     packagedLibraries.each { coordinate ->
         add(luminGraphicsShadow.name, coordinate) { transitive = false }
     }
@@ -105,9 +107,11 @@ def verifyNeoForgeContract = tasks.register('verifyNeoForgeContract') {
             throw new GradleException("Missing NeoForge ${minecraftVersion} client entrypoint: ${source}")
         }
         def sourceText = source.getText('UTF-8')
-        ["@Mod(value = LuminGraphicsNeoForge${versionKey}.MOD_ID, dist = Dist.CLIENT)",
-         'RenderSystem.assertOnRenderThread()',
-         'GL.getCapabilities()', 'token.invalidate()'].each { contract ->
+        def lifecycleContracts = minecraftVersion == '26.1.2'
+                ? ['MinecraftUiRuntime2612.bindCurrent', 'runtime.close()']
+                : ['RenderSystem.assertOnRenderThread()', 'GL.getCapabilities()', 'token.invalidate()']
+        (["@Mod(value = LuminGraphicsNeoForge${versionKey}.MOD_ID, dist = Dist.CLIENT)"]
+                + lifecycleContracts).each { contract ->
             if (!sourceText.contains(contract)) {
                 throw new GradleException("NeoForge ${minecraftVersion} lifecycle contract is missing: ${contract}")
             }
@@ -123,7 +127,7 @@ def verifyNeoForgeContract = tasks.register('verifyNeoForgeContract') {
         def metadataText = metadata.getText('UTF-8')
         def requiredMetadata = [
                 'modLoader="javafml"', 'loaderVersion="[11,)"', 'modId="lumin_graphics_mc"',
-                "version=\"1.0.0+mc${minecraftVersion}\"", "config=\"${mixinConfigName}\"",
+                "version=\"${project.version}+mc${minecraftVersion}\"", "config=\"${mixinConfigName}\"",
                 "versionRange=\"[${expectedNeoForgeVersion}]\"", "versionRange=\"[${minecraftVersion}]\"",
                 'side="CLIENT"', '[features.lumin_graphics_mc]', 'javaVersion="[25,)"'
         ]

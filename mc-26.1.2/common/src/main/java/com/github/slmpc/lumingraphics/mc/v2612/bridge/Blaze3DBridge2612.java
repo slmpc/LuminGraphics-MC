@@ -383,4 +383,5 @@ public final class Blaze3DBridge2612 {
                 info.magFilter() == RhiFilter.NEAREST ? FilterMode.NEAREST : FilterMode.LINEAR,
                 Math.round(info.maxAnisotropy()), java.util.OptionalDouble.empty());
     }
+
 }

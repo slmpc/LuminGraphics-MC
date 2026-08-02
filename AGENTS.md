@@ -2,7 +2,7 @@
 
 ## Overview
 
-LuminGraphics-MC 1.0.0 bridges Minecraft client rendering to LuminGraphics
+LuminGraphics-MC 1.1.0 bridges Minecraft client rendering to LuminGraphics
 through a loader/version matrix. It targets Java 25 and publishes local Maven
 artifacts only; no public registry workflow is documented.
 
@@ -34,6 +34,7 @@ reference/                checked source references for version comparison
 | `BridgeMatrix` | bridge-contract | Validates matrix rows and provenance. |
 | `BridgeLease` | bridge-contract | Borrowed/rebuilt bridge lifecycle. |
 | `Blaze3DBridge2612` | 26.1.2 common | Versioned Minecraft adapter. |
+| `MinecraftGraphicsRuntime2612` | 26.1.2 common | Public context, Prism/Lumin, frame, target, and teardown owner. |
 | `RealClientBridgeSmoke2612` | 26.1.2 common | JSON/PNG smoke receipt producer. |
 | `GlAccess262` | 26.2 common | Versioned mixin access boundary. |
 

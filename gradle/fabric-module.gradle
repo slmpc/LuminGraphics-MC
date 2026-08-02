@@ -6,9 +6,9 @@ import groovy.json.JsonSlurper
 def moduleSpec = rootProject.ext.minecraftLeafSpec.call(project.path)
 def commonProject = project(moduleSpec.commonPath)
 dependencies {
-    implementation commonProject
-    implementation 'com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:0.1.0'
-    implementation 'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:0.1.0'
+    compileOnly commonProject
+    compileOnly 'com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:0.1.1'
+    compileOnly 'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:0.1.1'
 }
 
 def minecraftVersion = moduleSpec.version
@@ -18,15 +18,16 @@ def expectedApi = minecraftVersion == '26.1.2' ? '0.150.0+26.1.2' : '0.156.0+26.
 def mixinName = minecraftVersion == '26.1.2' ?
         'lumin_graphics_mc_2612.mixins.json' : 'lumin-graphics-mc-262.mixins.json'
 def accessWidenerName = "lumin_graphics_mc_${versionKey}.accesswidener"
+def luminVersion = libs.versions.lumin.get()
 def packagedLibraries = [
-        'com.github.slmpc.lumingraphics:lumin-graphics-core:1.0.0',
-        'com.github.slmpc.lumingraphics:lumin-graphics-render:1.0.0',
-        'com.github.slmpc.lumingraphics:lumin-graphics-text:1.0.0',
-        'com.github.slmpc.lumingraphics:lumin-graphics-ui:1.0.0',
-        'com.github.slmpc.prismrhi:prism-rhi-core:0.1.0',
-        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-common:0.1.0',
-        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:0.1.0',
-        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:0.1.0'
+        "com.github.slmpc.lumingraphics:lumin-graphics-core:${luminVersion}",
+        "com.github.slmpc.lumingraphics:lumin-graphics-render:${luminVersion}",
+        "com.github.slmpc.lumingraphics:lumin-graphics-text:${luminVersion}",
+        "com.github.slmpc.lumingraphics:lumin-graphics-ui:${luminVersion}",
+        'com.github.slmpc.prismrhi:prism-rhi-core:0.1.1',
+        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-common:0.1.1',
+        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:0.1.1',
+        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:0.1.1'
 ]
 
 base {
@@ -40,6 +41,7 @@ def luminGraphicsShadow = configurations.create('luminGraphicsShadow') {
 }
 
 dependencies {
+    add(luminGraphicsShadow.name, project(':bridge-contract')) { transitive = false }
     packagedLibraries.each { coordinate ->
         add(luminGraphicsShadow.name, coordinate) { transitive = false }
     }
@@ -84,7 +86,7 @@ tasks.register('verifyFabricWiring') {
         def metadata = new JsonSlurper().parse(metadataFile)
         def expectedEntrypoint = "com.github.slmpc.lumingraphics.mc.fabric.v${versionKey}.LuminGraphicsFabricClient"
         if (metadata.id != 'lumin_graphics_mc') throw new GradleException("Unexpected Fabric mod id: ${metadata.id}")
-        if (metadata.version != "1.0.0+mc${minecraftVersion}") {
+        if (metadata.version != "${project.version}+mc${minecraftVersion}") {
             throw new GradleException("Unexpected Fabric version: ${metadata.version}")
         }
         if (metadata.environment != 'client' || metadata.entrypoints?.client != [expectedEntrypoint]) {

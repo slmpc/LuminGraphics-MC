@@ -8,11 +8,12 @@ loader artifact matching both version and loader:
 `lumin-graphics-mc-neoforge-26.1.2`,
 `lumin-graphics-mc-fabric-26.2`, or
 `lumin-graphics-mc-neoforge-26.2`. The `bridge-contract` and versioned common
-JARs are implementation dependencies, not final mods.
+JARs are never embedded as separate consumer dependencies; their required
+classes are directly merged into the matching final loader artifact.
 
-Every final loader artifact directly shadows the LuminGraphics and required
-PrismRHI payload. It contains their classes and shaders directly, with
-no Fabric JIJ or NeoForge jarJar dependency archives.
+Every final loader artifact directly shadows the bridge-contract, LuminGraphics,
+and required PrismRHI payload. It contains their classes and shaders directly,
+with no Fabric JIJ or NeoForge jarJar dependency archives.
 
 ## Bridge Contract And Matrix
 
@@ -22,6 +23,69 @@ loader, backend, object, and direction. OpenGL supports borrowed zero-copy
 texture/buffer/shader wrappers, rebuilt sampler/pipeline values, and in-place
 encoder/render-pass adapters. Vulkan rows are unsupported because zero-copy is
 unsafe; `unknown` backend rows are also unsupported.
+
+## Minecraft 26.1.2 Runtime
+
+`MinecraftGraphicsRuntime2612.bindCurrent(CreationConfig)` is the public,
+loader-neutral binding API for a current Minecraft OpenGL render context. It
+owns the Prism instance, external device, graphics queue, command pool and
+command buffer, plus `Blaze3DBridge2612` and `LuminGraphicsContext`. Call
+`beginFrame(id)` and exactly one of `endFrame()` or `abortFrame()` on the render
+thread. The runtime borrows the current Blaze3D main target on demand and
+automatically replaces its wrappers when the color/depth views or dimensions
+change. The loader lifecycle submits recorded 2D commands after
+`GameRenderer.render` and before Minecraft blits the main target to the window.
+`invalidateRenderTargets(reason)` is only valid outside an active
+frame. `invalidateContext()` rejects all later access, and `close()` is
+idempotent and never native-closes Minecraft textures or views.
+`MinecraftGraphicsRuntime2612.current()` returns the runtime already bound by
+the active loader, so common consumers do not import loader entrypoint types.
+
+Fabric and NeoForge entrypoints only bind this common runtime and close it at
+client shutdown. No loader API is present in the common implementation.
+
+### UI fonts and glyph atlases
+
+`MinecraftUiRuntime2612` owns resource-pack font loading, glyph atlas upload,
+Minecraft texture registration, resource-reload invalidation, and the adapter
+used by `net.minecraft.client.gui.Font`. Consumers register business font IDs
+with `registerFont`, select the default with `useDefaultFont` or
+`useCustomDefaultFont`, and use `font`, `textMetrics`, `minecraftFont`, or
+`systemEmojiAtlas` directly. Glyphs returned by `minecraftFont()` require a
+`MinecraftFontAdapter2612.RenderOptions` because the render pipelines and
+antialiasing policy remain application state.
+
+Returned font and atlas objects are borrowed from the runtime. Resource reload
+and `MinecraftUiRuntime2612.close()` release them.
+
+Each 2D frame uses a top-left-origin orthographic projection derived from the
+current framebuffer size and GUI scale. Consumers submit logical coordinates
+through `UiTree`; the runtime owns the projection uniform and descriptor.
+
+For 2D HUD blur, construct a `MinecraftBlurRegion2612` in GUI coordinates and
+call `MinecraftUiRuntime2612.applyBlur(region)` during an active Minecraft
+graphics frame. The runtime copies the current main target to a feedback target
+before sampling, owns the blur sampler and shader bindings, retires per-frame
+GPU resources after frame completion, and releases all remaining resources on
+`close()`. This API intentionally does not expose generic post-processing or
+glow-mask behavior.
+
+## Local SNAPSHOT publishing
+
+Development publications use `1.1.0-SNAPSHOT` and consume LuminGraphics
+`1.1.0-SNAPSHOT`. Publish LuminGraphics first, then republish these matching
+loader artifacts after each edit without changing either version:
+
+```powershell
+cd D:\Dev\ChenMeng\LuminGraphics
+.\gradlew.bat publish -PpublishRepository=D:\Dev\ChenMeng\maven-repository
+cd D:\Dev\ChenMeng\LuminGraphics-MC
+.\gradlew.bat publish -PpublishRepository=D:\Dev\ChenMeng\maven-repository
+```
+
+The MC build checks changing modules on each Gradle invocation. The same
+property is used as the first dependency repository, or pass
+`-PlocalRepository=...` when resolution and publication use different paths.
 
 Borrowed leases observe exact context/owner-render-thread/current-GL checks and
 become unusable after their owner token invalidates. Closing a borrowed lease

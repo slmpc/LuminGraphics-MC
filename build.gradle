@@ -10,13 +10,32 @@ import org.gradle.api.publish.maven.MavenPublication
 group = providers.gradleProperty('group').get()
 version = providers.gradleProperty('version').get()
 
+repositories {
+    def localRepository = providers.gradleProperty('localRepository')
+            .orElse(providers.gradleProperty('publishRepository')).orNull
+    if (localRepository != null) {
+        maven { url = uri(localRepository) }
+    }
+    mavenCentral()
+    maven { url = uri('https://slmpc.github.io/maven-repository/') }
+}
+
 allprojects {
     group = rootProject.group
     version = rootProject.version
+    configurations.configureEach {
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    }
 }
 
 subprojects {
     repositories {
+        def localRepository = providers.gradleProperty('localRepository')
+                .orElse(providers.gradleProperty('publishRepository')).orNull
+        if (localRepository != null) {
+            maven { url = uri(localRepository) }
+        }
+        mavenCentral()
         maven { url = uri('https://slmpc.github.io/maven-repository/') }
     }
     plugins.withId('java') {
@@ -150,6 +169,7 @@ tasks.register('verifyWrapperChecksum') {
 def minecraftModules = minecraftLeafSpecs.values() as List
 def publishedProjectPaths = [':bridge-contract'] + minecraftModules.collect { it.projectPath }
 def loaderVariants = minecraftModules.findAll { it.role != 'common' }.collect { it.projectPath }
+def luminVersion = libs.versions.lumin.get()
 
 gradle.allprojects { minecraftProject ->
     if (minecraftProject.path in publishedProjectPaths) {
@@ -157,6 +177,13 @@ gradle.allprojects { minecraftProject ->
         minecraftProject.pluginManager.withPlugin('java') {
             minecraftProject.pluginManager.apply('maven-publish')
             minecraftProject.extensions.configure(PublishingExtension) { publishingExtension ->
+                def publishRepository = providers.gradleProperty('publishRepository').orNull
+                if (publishRepository != null) {
+                    publishingExtension.repositories.maven {
+                        name = 'localRelease'
+                        url = uri(publishRepository)
+                    }
+                }
                 publishingExtension.publications.create('mavenJava', MavenPublication) { publication ->
                     publication.from(minecraftProject.components.getByName('java'))
                     publication.artifactId = minecraftSpec == null ? minecraftProject.name : minecraftSpec.archiveBaseName
@@ -181,11 +208,10 @@ tasks.register('verifyVariantJars', JavaExec) {
         def resolvedArtifacts = [] as LinkedHashSet
         loaderVariants.each { variant ->
             resolvedArtifacts.addAll(project(variant).configurations
-                    .getByName('luminGraphicsShadow').resolvedConfiguration.lenientConfiguration.artifacts
-                    .collect { it.file })
+                    .getByName('luminGraphicsShadow').files)
         }
-        if (resolvedArtifacts.size() != 8) {
-            throw new GradleException("Expected eight resolved Lumin/Prism artifacts, got ${resolvedArtifacts.size()}")
+        if (resolvedArtifacts.size() != 9) {
+            throw new GradleException("Expected nine resolved bridge/Lumin/Prism artifacts, got ${resolvedArtifacts.size()}")
         }
         def arguments = [layout.projectDirectory.asFile] + resolvedArtifacts
         def overrideDirectory = providers.gradleProperty('variantJarOverride').orNull
@@ -205,6 +231,57 @@ tasks.register('buildAllVariants') {
         }
     }
     dependsOn 'verifyVariantJars'
+}
+
+tasks.register('verifyPublishedCoordinates') {
+    group = 'verification'
+    description = 'Inspects and freshly resolves every current publication from the explicit local Maven repository.'
+    doLast {
+        if (project.version.toString() != '1.1.0-SNAPSHOT') {
+            throw new GradleException("Unexpected development publication version: ${project.version}")
+        }
+        def repositoryProperty = providers.gradleProperty('publishRepository').orNull
+        if (repositoryProperty == null) {
+            throw new GradleException('verifyPublishedCoordinates requires -PpublishRepository=<local Maven path>')
+        }
+        def repositoryRoot = file(repositoryProperty).canonicalFile
+        def coordinates = ['bridge-contract'] + minecraftModules.collect { it.archiveBaseName }
+        coordinates.each { artifactId ->
+            def publicationVersion = project.version.toString()
+            def relative = "com/github/slmpc/lumingraphics/mc/${artifactId}/${publicationVersion}"
+            def coordinateDirectory = new File(repositoryRoot, relative)
+            def metadataFile = new File(coordinateDirectory, 'maven-metadata.xml')
+            if (!metadataFile.isFile() || metadataFile.length() == 0) {
+                throw new GradleException("Missing Maven SNAPSHOT metadata for ${artifactId}: ${coordinateDirectory}")
+            }
+            def metadata = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+                    .newDocumentBuilder().parse(metadataFile)
+            def snapshotVersion = javax.xml.xpath.XPathFactory.newInstance().newXPath().evaluate(
+                    "string(/metadata/versioning/snapshotVersions/snapshotVersion[extension='jar' and not(classifier)]/value)", metadata)
+            if (snapshotVersion == null || snapshotVersion.isEmpty()) {
+                throw new GradleException("Missing current JAR snapshot value for ${artifactId}: ${metadataFile}")
+            }
+            def jarFile = new File(coordinateDirectory, "${artifactId}-${snapshotVersion}.jar")
+            def pomFile = new File(coordinateDirectory, "${artifactId}-${snapshotVersion}.pom")
+            if (!jarFile.isFile() || jarFile.length() == 0 || !pomFile.isFile() || pomFile.length() == 0) {
+                throw new GradleException("Missing published JAR/POM for ${artifactId}: ${coordinateDirectory}")
+            }
+            def detached = configurations.detachedConfiguration(
+                    dependencies.create("com.github.slmpc.lumingraphics.mc:${artifactId}:${publicationVersion}"))
+            detached.transitive = false
+            detached.resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+            detached.resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
+            def resolved = detached.singleFile.canonicalFile
+            def digest = java.security.MessageDigest.getInstance('SHA-256')
+                    .digest(jarFile.bytes).encodeHex().toString()
+            def resolvedDigest = java.security.MessageDigest.getInstance('SHA-256')
+                    .digest(resolved.bytes).encodeHex().toString()
+            if (resolvedDigest != digest) {
+                throw new GradleException("Fresh resolution is stale for ${artifactId}: ${resolved}")
+            }
+            println "PUBLISHED_COORDINATE_OK gav=com.github.slmpc.lumingraphics.mc:${artifactId}:${publicationVersion} resolvedVersion=${snapshotVersion} sha256=${digest} jar=${jarFile} pom=${pomFile} cache=${resolved}"
+        }
+    }
 }
 
 def bridgeSmokeVariants = minecraftModules.findAll { it.role != 'common' }.collect { it.projectPath }
@@ -275,12 +352,14 @@ def architectureModules = [':bridge-contract'] + minecraftModules.collect { it.p
 
 def architectureMatrixCheck = project(':bridge-contract').tasks.register('architectureMatrixCheck', Test) {
     group = 'verification'
-    dependsOn project(':bridge-contract').tasks.named('testClasses')
+    dependsOn project(':bridge-contract').tasks.named('testClasses'), baseline2612[0], baseline262[0]
     testClassesDirs = project(':bridge-contract').sourceSets.test.output.classesDirs
     classpath = project(':bridge-contract').sourceSets.test.runtimeClasspath
     include '**/BridgeMatrixTest.class'
     useJUnitPlatform()
     testLogging.showStandardStreams = true
+    systemProperty 'baseline.root.26.1.2', layout.buildDirectory.dir('generated-baselines/26.1.2').get().asFile
+    systemProperty 'baseline.root.26.2', layout.buildDirectory.dir('generated-baselines/26.2').get().asFile
 }
 
 tasks.register('architectureCheck', Test) {
@@ -309,7 +388,7 @@ tasks.register('architectureCheck', Test) {
                     if (dependency.version == '0.0.1') {
                         throw new GradleException("stale 0.0.1 GAV in ${path}:${name}: ${dependency.group}:${dependency.name}:${dependency.version}")
                     }
-                    def expectedVersion = dependency.group == 'com.github.slmpc.lumingraphics' ? '1.0.0'
+                    def expectedVersion = dependency.group == 'com.github.slmpc.lumingraphics' ? luminVersion
                             : dependency.group == 'com.github.slmpc.prismrhi' ? '0.1.0' : null
                     if (expectedVersion != null && dependency.version != null && dependency.version != expectedVersion) {
                         throw new GradleException("stale published GAV in ${path}:${name}: ${dependency.group}:${dependency.name}:${dependency.version}")

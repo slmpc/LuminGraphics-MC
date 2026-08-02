@@ -79,6 +79,7 @@ class BridgeMatrix2612Test {
         assertEquals(101, fixture.device.imageAdoption.nativeObject().value());
         assertSame(fixture.device.viewAdoption.createInfo().image(), importedView.image());
         assertEquals(101, RhiNativeObjects.requireValue(image, OpenGlNativeObjectTypes.TEXTURE));
+        assertEquals(101, RhiNativeObjects.requireValue(importedView, OpenGlNativeObjectTypes.TEXTURE));
         assertEquals(101, RhiNativeObjects.requireValue(importedView.image(), OpenGlNativeObjectTypes.TEXTURE));
         assertEquals(102, fixture.device.bufferAdoption.nativeObject().value());
         assertEquals(8, importedSlice.offset());

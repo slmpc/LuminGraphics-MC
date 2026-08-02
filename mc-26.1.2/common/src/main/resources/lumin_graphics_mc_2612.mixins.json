@@ -11,7 +11,11 @@
     "GlBufferBorrowedMixin",
     "GlTextureBorrowedMixin",
     "GlShaderModuleBorrowedMixin",
-    "GlProgramBorrowedMixin"
+    "GlProgramBorrowedMixin",
+    "GlBackendContextVersionMixin2612",
+    "GameRendererFrameMixin2612",
+    "RenderSystemFrameMixin2612",
+    "RenderTypeFactory2612"
   ],
   "injectors": { "defaultRequire": 1 }
 }

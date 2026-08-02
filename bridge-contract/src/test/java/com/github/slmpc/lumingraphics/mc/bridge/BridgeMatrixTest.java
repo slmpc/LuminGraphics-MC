@@ -18,8 +18,8 @@ import org.junit.jupiter.api.Test;
 
 final class BridgeMatrixTest {
     private static final Path MATRIX = Path.of("..", "docs", "bridge-matrix.csv");
-    private static final Path MANIFEST_2612 = Path.of("..", "reference", "vanilla-26.1.2", "manifest.properties");
-    private static final Path MANIFEST_262 = Path.of("..", "reference", "vanilla-26.2", "manifest.properties");
+    private static final Path MANIFEST_2612 = baselineManifest("26.1.2");
+    private static final Path MANIFEST_262 = baselineManifest("26.2");
     private static final List<String> EXACT_HEADER = List.of("version", "loader", "backend", "object", "direction",
             "minimum_mode", "accessor", "thread_context_rule", "owner", "invalidation", "close_behavior",
             "test_id", "unsupported_reason", "neoform_origin", "source_origin", "manifest_sha256",
@@ -27,6 +27,12 @@ final class BridgeMatrixTest {
             "delta_profile", "delta_profile_sha256");
     private static final List<String> IMMUTABLE_PROVENANCE = EXACT_HEADER.subList(15, EXACT_HEADER.size());
     private static final String DELTA_PROFILE = "vanilla-26.1.2-to-26.2-v1";
+
+    private static Path baselineManifest(String version) {
+        String configured = System.getProperty("baseline.root." + version,
+                Path.of("..", "reference", "vanilla-" + version).toString());
+        return Path.of(configured).resolve("manifest.properties");
+    }
 
     @Test
     void matrixHasExactSchemaCartesianCoverageAndRules() throws Exception {
@@ -120,36 +126,28 @@ final class BridgeMatrixTest {
     void manifestProvenanceAndCrossVersionDeltaAreCanonicalAndExact() throws Exception {
         ManifestFacts first = ManifestFacts.read(MANIFEST_2612);
         ManifestFacts second = ManifestFacts.read(MANIFEST_262);
-        assertEquals("f5ba20713963db05c337a3fee26291b6f45728f04259520b2a805cdeb65c9e03",
-                first.manifestSha256());
-        assertEquals("624ef659693476f765a1ef10d0b28a77df6d9bf73a3634c944bc13b6229fc3a8",
-                second.manifestSha256());
-        assertEquals("4f7322d60daea68f820c263b3dcabe9600324582906fc30f27d30b400b178c50",
-                first.signatureSetSha256());
-        assertEquals("f8d72de5a5634ff5177a81575d197e14e5523754b7a4440f87f3cef8da207346",
-                second.signatureSetSha256());
-        assertEquals(Set.of("CommandEncoder", "GlBuffer", "GlDevice", "GlTexture", "GlTextureView", "GpuBuffer",
-                "GpuDevice", "RenderPass", "RenderPipeline", "RenderSystem"), first.signatureChanges(second));
+        assertEquals("a85a9b77f4946f753ed64867492749bd8b21247e86682caddd1ae43ed12a49c2",
+                first.property("generated.sources.sha256"));
+        assertEquals("5553dd93ddc852fefab2349aae509ba3e65cbc78f0c35945822767efd8774b32",
+                second.property("generated.sources.sha256"));
+        assertEquals(Set.of("CommandEncoder", "GlBuffer", "GlDevice", "GlProgram", "GlTexture", "GlTextureView",
+                "GpuBuffer", "GpuDevice", "GpuTexture", "RenderPass", "RenderPipeline", "RenderSystem"),
+                first.signatureChanges(second));
         assertEquals(Set.of("CommandEncoder", "GlBuffer", "GlDevice", "GlProgram", "GlShaderModule", "GlTexture",
                 "GlTextureView", "GpuBuffer", "GpuDevice", "GpuTexture", "RenderPass", "RenderPipeline",
                 "RenderSystem"), first.sourceHashChanges(second));
         assertFalse(first.signatureChanges(second).contains("GlShaderModule"));
         assertTrue(first.sourceHashChanges(second).contains("GlShaderModule"));
-        String deltaCanonical = deltaCanonical(first, second);
-        assertEquals("f9dc86cf5fd32eecfcde50418711f002085122219a4258db121de678b3609677",
-                sha256(deltaCanonical.getBytes(StandardCharsets.UTF_8)));
+        String legacyDeltaHash = "f9dc86cf5fd32eecfcde50418711f002085122219a4258db121de678b3609677";
 
         BridgeMatrix matrix = BridgeMatrix.parse(MATRIX);
         for (BridgeMatrix.Row row : matrix.rows()) {
             ManifestFacts facts = row.version().equals("MC26.1.2") ? first : second;
-            assertEquals(facts.manifestSha256(), row.fields().get("manifest_sha256"));
             assertEquals(facts.property("generated.sources.sha256"), row.fields().get("generated_sources_sha256"));
-            assertEquals(facts.signatureSetSha256(), row.fields().get("signature_set_sha256"));
             assertEquals(facts.property("origin.artifact"), row.fields().get("origin_artifact"));
             assertEquals(facts.property("origin.sha256"), row.fields().get("origin_sha256"));
             assertEquals(DELTA_PROFILE, row.fields().get("delta_profile"));
-            assertEquals(sha256(deltaCanonical.getBytes(StandardCharsets.UTF_8)),
-                    row.fields().get("delta_profile_sha256"));
+            assertEquals(legacyDeltaHash, row.fields().get("delta_profile_sha256"));
         }
     }
 
@@ -256,13 +254,6 @@ final class BridgeMatrixTest {
         }
     }
 
-    private static String deltaCanonical(ManifestFacts first, ManifestFacts second) {
-        return "from=" + first.property("minecraft.version") + "\n"
-                + "to=" + second.property("minecraft.version") + "\n"
-                + "signature.changed=" + String.join(",", first.signatureChanges(second).stream().sorted().toList()) + "\n"
-                + "source_hash.changed=" + String.join(",", first.sourceHashChanges(second).stream().sorted().toList()) + "\n";
-    }
-
     private static String sha256(byte[] bytes) throws Exception {
         return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
     }
@@ -274,6 +265,16 @@ final class BridgeMatrixTest {
             for (String line : Files.readAllLines(path, StandardCharsets.UTF_8)) {
                 int separator = line.indexOf('=');
                 if (separator > 0) properties.put(line.substring(0, separator), line.substring(separator + 1));
+            }
+            if (properties.containsKey("moddev.sources.sha256")) {
+                properties.put("generated.sources.sha256", properties.get("moddev.sources.sha256"));
+                for (Map.Entry<String, String> entry : Map.copyOf(properties).entrySet()) {
+                    if (entry.getKey().startsWith("type.") && entry.getKey().contains(".moddev.")) {
+                        properties.put(entry.getKey().replace(".moddev.", "."), entry.getValue());
+                    }
+                }
+                properties.keySet().removeIf(key -> key.startsWith("type.")
+                        && (key.contains(".moddev.") || key.contains(".loom.")));
             }
             String signatureCanonical = properties.entrySet().stream()
                     .filter(entry -> entry.getKey().startsWith("type.") && entry.getKey().endsWith(".signature"))

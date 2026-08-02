@@ -55,7 +55,9 @@ final class ArchitectureGuardTest {
             Path libraries = requiredDirectory(root.resolve(loaderRoot).resolve("build/libs"), "loader JAR root");
             try (var paths = Files.list(libraries)) {
                 List<Path> loaderJars = paths.filter(path -> path.toString().endsWith(".jar"))
-                        .filter(path -> !path.getFileName().toString().contains("sources")).toList();
+                        .filter(path -> !path.getFileName().toString().contains("sources"))
+                        .filter(path -> path.getFileName().toString().endsWith("-1.2.0.jar"))
+                        .toList();
                 assertTrue(loaderJars.size() == 1, () -> "expected one loader JAR in " + libraries + ", found " + loaderJars);
                 for (Path jar : loaderJars) {
                     jarCount++;
@@ -224,7 +226,7 @@ final class ArchitectureGuardTest {
         String[] parts = coordinate.split(":", -1);
         reject(parts.length != 3, path, "malformed GAV " + coordinate);
         String expectedVersion = switch (parts[0]) {
-            case "com.github.slmpc.lumingraphics" -> "1.0.0";
+            case "com.github.slmpc.lumingraphics" -> "1.2.0";
             case "com.github.slmpc.prismrhi" -> "0.1.0";
             default -> null;
         };
