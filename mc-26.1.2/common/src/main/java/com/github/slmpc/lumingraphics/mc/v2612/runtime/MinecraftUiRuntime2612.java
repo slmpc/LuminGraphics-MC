@@ -37,6 +37,8 @@ import org.jspecify.annotations.Nullable;
 public final class MinecraftUiRuntime2612 implements AutoCloseable {
     public enum TextureFilter { NEAREST, LINEAR }
     static final float UI_TEXT_SCALE = 0.36f;
+    static final int FONT_ATLAS_WIDTH = 1024;
+    static final int FONT_ATLAS_HEIGHT = 1024;
 
     /** UI GPU 资源和默认字体的稳定输入。 */
     public record UiConfig(String defaultFontId, Map<String, Identifier> fontResources, TextureFilter textureFilter,
@@ -55,11 +57,14 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
                     || atlasWidth <= 0 || atlasHeight <= 0 || maxAtlasPages <= 0) {
                 throw new IllegalArgumentException("Minecraft UI resource sizes are invalid");
             }
+            if (atlasWidth != FONT_ATLAS_WIDTH || atlasHeight != FONT_ATLAS_HEIGHT) {
+                throw new IllegalArgumentException("Font atlas pages must be exactly 1024 x 1024 pixels");
+            }
         }
 
         public static UiConfig defaults(Identifier defaultFontResource) {
             return new UiConfig("default", Map.of("default", defaultFontResource), TextureFilter.LINEAR,
-                    64 * 1024, 16, 72, 16, 512, 512, 8);
+                    64 * 1024, 16, 72, 16, FONT_ATLAS_WIDTH, FONT_ATLAS_HEIGHT, 8);
         }
     }
 

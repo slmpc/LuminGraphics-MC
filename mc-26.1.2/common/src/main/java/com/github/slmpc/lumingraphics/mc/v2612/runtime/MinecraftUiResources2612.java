@@ -174,8 +174,10 @@ final class MinecraftUiResources2612 implements UiResourceResolver, AutoCloseabl
     }
 
     private TtfFontLoader createFont(FontResource source) {
+        // MC 26.1.2 字体页固定为 1024²，避免调用方配置回退到较小 Atlas 后重新触发跨页问题。
         return new TtfFontLoader(source, config.fontPixelHeight(), config.fontPadding(),
-                config.atlasWidth(), config.atlasHeight(), config.maxAtlasPages(), uploader(), Runnable::run);
+                MinecraftUiRuntime2612.FONT_ATLAS_WIDTH, MinecraftUiRuntime2612.FONT_ATLAS_HEIGHT,
+                config.maxAtlasPages(), uploader(), Runnable::run);
     }
 
     private MinecraftGlyphAtlasUploader2612 uploader() {

@@ -183,6 +183,7 @@ public final class MinecraftGraphicsRuntime2612 implements AutoCloseable {
     public boolean frameActive() { return frames.frameActive(); }
     public long activeFrameId() { requireAccess(); return frames.activeFrameId(); }
     public long lastEndedFrameId() { requireAccess(); return frames.lastEndedFrameId(); }
+    void retireAfterFrame(AutoCloseable resource) { requireAccess(); frames.retireAfterFrame(resource); }
     public void invalidateRenderTargets(String reason) { requireAccess(); targetBridge.invalidate(reason); }
     public void invalidateContext() { close(); }
     public boolean acceptingSubmissions() { return lifecycle.acceptingSubmissions(); }

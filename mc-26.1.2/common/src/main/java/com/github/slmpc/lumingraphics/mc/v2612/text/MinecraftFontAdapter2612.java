@@ -95,6 +95,11 @@ public final class MinecraftFontAdapter2612 {
 
     private record RenderKey(net.minecraft.resources.Identifier id, RenderPipeline pipeline) { }
 
+    /** Atlas revision 退休时同步清理对应 RenderType，避免字体持续扩容时缓存线性增长。 */
+    public static synchronized void releaseTexture(net.minecraft.resources.Identifier id) {
+        RENDER_TYPES.keySet().removeIf(key -> key.id().equals(id));
+    }
+
     private record StyledGlyph(TtfFontLoader font, GlyphDescriptor glyph, float x, float y,
                                int color, int shadowColor, Style style, float boldOffset,
                                float shadowOffset, float advance, RenderOptions options)

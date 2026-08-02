@@ -2,6 +2,7 @@ package com.github.slmpc.lumingraphics.mc.v2612.runtime;
 
 import com.github.slmpc.lumingraphics.render.resource.DefaultRenderResources;
 import com.github.slmpc.lumingraphics.render.scheduler.Render2DTexture;
+import com.github.slmpc.lumingraphics.mc.v2612.text.MinecraftFontAdapter2612;
 import com.github.slmpc.lumingraphics.text.atlas.AtlasPixels;
 import com.github.slmpc.lumingraphics.text.atlas.GlyphAtlasUpload;
 import com.github.slmpc.lumingraphics.text.atlas.GlyphAtlasUploader;
@@ -26,8 +27,6 @@ import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
@@ -39,7 +38,6 @@ final class MinecraftGlyphAtlasUploader2612 implements GlyphAtlasUploader, AutoC
     private final MinecraftGraphicsRuntime2612 runtime;
     private final DefaultRenderResources resources;
     private final Minecraft client;
-    private final List<AutoCloseable> atlasResources = new ArrayList<>();
     private boolean closed;
 
     MinecraftGlyphAtlasUploader2612(Minecraft client, MinecraftGraphicsRuntime2612 runtime,
@@ -87,11 +85,9 @@ final class MinecraftGlyphAtlasUploader2612 implements GlyphAtlasUploader, AutoC
             runtime.commandBuffer().copyBufferToImage(staging, image);
             runtime.commandBuffer().pipelineBarrier(RhiPipelineBarrier.builder().image(RhiImageBarrier.of(
                     image, RhiResourceState.TRANSFER_DST, RhiResourceState.SAMPLED_IMAGE)).build());
-            atlasResources.add(staging);
-            atlasResources.add(view);
-            atlasResources.add(image);
-            atlasResources.add(sampler);
-            atlasResources.add(descriptor);
+            // staging 只服务本帧上传，submit 执行完 copy 后即可释放，无需跟随整张 atlas 的寿命。
+            runtime.retireAfterFrame(staging);
+            staging = null;
             var minecraftSampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
             client.getTextureManager().register(minecraftId, new BorrowedGlyphAtlasTexture2612(
                     minecraftView.texture(), minecraftView, minecraftSampler));
@@ -103,8 +99,15 @@ final class MinecraftGlyphAtlasUploader2612 implements GlyphAtlasUploader, AutoC
             GlTextureView ownedMinecraftView = minecraftView;
             return new GlyphAtlasUpload(new MinecraftGlyphAtlasTexture2612(
                     texture, minecraftView, minecraftId, minecraftSampler), () -> {
-                client.getTextureManager().release(minecraftId);
-                ownedMinecraftView.close();
+                // 旧 revision 可能仍被当前帧的 Minecraft/Lumin draw 引用，统一在 submit 后退休。
+                runtime.retireAfterFrame(() -> {
+                    MinecraftFontAdapter2612.releaseTexture(minecraftId);
+                    client.getTextureManager().release(minecraftId);
+                    resources.unregisterTextureDescriptor(texture, ownedDescriptor);
+                    RuntimeException failure = GraphicsResourceCloser2612.closeReverse(
+                            ownedDescriptor, ownedSampler, ownedMinecraftView, ownedView, ownedImage);
+                    if (failure != null) throw failure;
+                });
             });
         } catch (RuntimeException failure) {
             if (minecraftRegistered) client.getTextureManager().release(minecraftId);
@@ -118,10 +121,6 @@ final class MinecraftGlyphAtlasUploader2612 implements GlyphAtlasUploader, AutoC
     @Override public synchronized void close() {
         if (closed) return;
         closed = true;
-        RuntimeException failure = GraphicsResourceCloser2612.closeReverse(
-                atlasResources.toArray(AutoCloseable[]::new));
-        atlasResources.clear();
-        if (failure != null) throw failure;
     }
 
     private static ByteBuffer stagingBytes(byte[] data) {

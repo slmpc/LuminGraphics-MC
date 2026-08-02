@@ -91,6 +91,25 @@ class RuntimeLifecycle2612ContractTest {
     }
 
     @Test
+    void frameRetirementRunsOnlyAfterRecordedCommandsAreSubmitted() {
+        List<String> events = new ArrayList<>();
+        FrameCoordinator2612 frames = new FrameCoordinator2612(new FrameCoordinator2612.Driver() {
+            @Override public FrameCoordinator2612.TargetLease acquireTarget() { throw new AssertionError(); }
+            @Override public void resetCommandBuffer() { }
+            @Override public void beginCommandBuffer() { events.add("begin"); }
+            @Override public void endCommandBuffer() { events.add("end"); }
+            @Override public void submitCommandBuffer() { events.add("submit"); }
+        });
+
+        frames.beginFrame(1);
+        frames.retireAfterFrame(() -> events.add("retire"));
+        assertEquals(List.of("begin"), events, "atlas resources must remain alive while commands are recorded");
+
+        frames.endFrame();
+        assertEquals(List.of("begin", "end", "submit", "retire"), events);
+    }
+
+    @Test
     void repeatedCloseIsIdempotentAndNeverClosesBorrowedOwner() {
         List<String> closed = new ArrayList<>();
         RuntimeLifecycle2612 lifecycle = new RuntimeLifecycle2612(() -> { });

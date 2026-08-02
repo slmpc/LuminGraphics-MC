@@ -1,5 +1,7 @@
 package com.github.slmpc.lumingraphics.mc.v2612.runtime;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 final class FrameCoordinator2612 implements AutoCloseable {
@@ -17,6 +19,7 @@ final class FrameCoordinator2612 implements AutoCloseable {
     }
 
     private final Driver driver;
+    private final List<AutoCloseable> retiredAfterFrame = new ArrayList<>();
     private TargetLease targetLease;
     private long activeFrameId = -1;
     private long lastStartedFrameId = -1;
@@ -51,6 +54,21 @@ final class FrameCoordinator2612 implements AutoCloseable {
         return activeFrameId;
     }
     synchronized long lastEndedFrameId() { return lastEndedFrameId; }
+    /**
+     * 将录制命令引用的资源延迟到当前帧提交或放弃后释放。
+     *
+     * <p>OpenGL 后端在 submit 时才执行已录制命令，因此录制期间不能立即删除 buffer、image 或 descriptor。</p>
+     */
+    synchronized void retireAfterFrame(AutoCloseable resource) {
+        requireOpen();
+        AutoCloseable value = Objects.requireNonNull(resource, "resource");
+        if (activeFrameId >= 0) {
+            retiredAfterFrame.add(value);
+            return;
+        }
+        RuntimeException failure = GraphicsResourceCloser2612.closeReverse(value);
+        if (failure != null) throw failure;
+    }
     synchronized Object currentTarget() {
         requireOpen();
         if (activeFrameId < 0) throw new IllegalStateException("No graphics frame is active");
@@ -66,6 +84,7 @@ final class FrameCoordinator2612 implements AutoCloseable {
         if (activeFrameId >= 0) {
             try { finish(false); } catch (RuntimeException exception) { failure = exception; }
         }
+        failure = GraphicsResourceCloser2612.merge(failure, closeRetiredResources());
         closed = true;
         if (failure != null) throw failure;
     }
@@ -88,8 +107,16 @@ final class FrameCoordinator2612 implements AutoCloseable {
             lastEndedFrameId = activeFrameId;
             activeFrameId = -1;
         }
+        failure = GraphicsResourceCloser2612.merge(failure, closeRetiredResources());
         if (failure != null) throw failure;
         return lastEndedFrameId;
+    }
+
+    private RuntimeException closeRetiredResources() {
+        RuntimeException failure = GraphicsResourceCloser2612.closeReverse(
+                retiredAfterFrame.toArray(AutoCloseable[]::new));
+        retiredAfterFrame.clear();
+        return failure;
     }
 
     private void requireOpen() {

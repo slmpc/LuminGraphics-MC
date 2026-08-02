@@ -56,7 +56,11 @@ with `registerFont`, select the default with `useDefaultFont` or
 antialiasing policy remain application state.
 
 Returned font and atlas objects are borrowed from the runtime. Resource reload
-and `MinecraftUiRuntime2612.close()` release them.
+and `MinecraftUiRuntime2612.close()` release them. Every TTF atlas page is fixed
+at `1024 x 1024` pixels; `UiConfig` rejects any other dimensions. Atlas revisions keep image, descriptor, sampler, and
+Minecraft texture ownership only while referenced; staging buffers and retired
+revisions are released after the frame command buffer has submitted, rather
+than accumulating until runtime shutdown.
 
 Each 2D frame uses a top-left-origin orthographic projection derived from the
 current framebuffer size and an effective UI scale. The runtime defaults to
