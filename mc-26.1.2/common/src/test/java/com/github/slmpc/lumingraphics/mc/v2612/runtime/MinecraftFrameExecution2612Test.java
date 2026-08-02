@@ -14,9 +14,10 @@ class MinecraftFrameExecution2612Test {
     @Test
     void frameUniformProjectsLogicalUiCoordinatesIntoClipSpace() throws Exception {
         Method capture = MinecraftFrameExecution2612.class
-                .getDeclaredMethod("captureUniforms", SurfaceMetrics.class);
+                .getDeclaredMethod("captureUniforms", SurfaceMetrics.class, SurfaceMetrics.class);
         capture.setAccessible(true);
-        ByteBuffer bytes = (ByteBuffer) capture.invoke(null, new SurfaceMetrics(2560, 1440, 2.0));
+        SurfaceMetrics metrics = new SurfaceMetrics(2560, 1440, 2.0);
+        ByteBuffer bytes = (ByteBuffer) capture.invoke(null, metrics, metrics);
         Matrix4f projection = new Matrix4f(bytes.asFloatBuffer());
 
         assertVector(new Vector4f(0.0f, 0.0f, 0.0f, 1.0f).mul(projection), -1.0f, 1.0f);

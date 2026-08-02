@@ -21,8 +21,9 @@ final class MinecraftFrameExecution2612 implements AutoCloseable {
 
     MinecraftFrameExecution2612(MinecraftGraphicsRuntime2612 runtime, DefaultRenderResources resources) {
         RenderTarget target = runtime.currentRenderTarget();
-        SurfaceMetrics metrics = runtime.luminContext().metrics();
-        resources.updateFrameUniforms(captureUniforms(metrics));
+        SurfaceMetrics framebufferMetrics = runtime.luminContext().metrics();
+        SurfaceMetrics projectionMetrics = runtime.projectionMetrics();
+        resources.updateFrameUniforms(captureUniforms(framebufferMetrics, projectionMetrics));
         execution = new RenderExecution(runtime.commandBuffer(), resources, runtime.activeFrameId(),
                 runtime.lastEndedFrameId(), target.width(), target.height());
         RhiRenderingInfo.Builder rendering = RhiRenderingInfo.builder(RhiRect2D.of(target.width(), target.height()))
@@ -44,15 +45,16 @@ final class MinecraftFrameExecution2612 implements AutoCloseable {
         execution.commands().endRendering();
     }
 
-    private static ByteBuffer captureUniforms(SurfaceMetrics metrics) {
-        var logicalSize = metrics.logicalSize();
+    static ByteBuffer captureUniforms(SurfaceMetrics framebufferMetrics, SurfaceMetrics projectionMetrics) {
+        var logicalSize = projectionMetrics.logicalSize();
         Matrix4f projection = new Matrix4f().setOrtho(0.0f, (float) logicalSize.width(),
                 (float) logicalSize.height(), 0.0f, -1.0f, 1.0f);
         ByteBuffer bytes = ByteBuffer.allocateDirect(FRAME_UNIFORM_BYTES).order(ByteOrder.nativeOrder());
         projection.get(bytes);
         bytes.position(16 * Float.BYTES);
-        bytes.putFloat(metrics.framebufferWidth()).putFloat(metrics.framebufferHeight())
-                .putFloat(1.0f / metrics.framebufferWidth()).putFloat(1.0f / metrics.framebufferHeight());
+        bytes.putFloat(framebufferMetrics.framebufferWidth()).putFloat(framebufferMetrics.framebufferHeight())
+                .putFloat(1.0f / framebufferMetrics.framebufferWidth())
+                .putFloat(1.0f / framebufferMetrics.framebufferHeight());
         return bytes.flip();
     }
 }

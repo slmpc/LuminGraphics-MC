@@ -14,15 +14,16 @@ def mixinConfigName = minecraftVersion == '26.1.2' ?
         'lumin_graphics_mc_2612.mixins.json' : 'lumin-graphics-mc-262.mixins.json'
 def accessTransformer = layout.projectDirectory.file('src/main/resources/META-INF/accesstransformer.cfg')
 def luminVersion = libs.versions.lumin.get()
+def prismVersion = libs.versions.prism.get()
 def packagedLibraries = [
         "com.github.slmpc.lumingraphics:lumin-graphics-core:${luminVersion}",
         "com.github.slmpc.lumingraphics:lumin-graphics-render:${luminVersion}",
         "com.github.slmpc.lumingraphics:lumin-graphics-text:${luminVersion}",
         "com.github.slmpc.lumingraphics:lumin-graphics-ui:${luminVersion}",
-        'com.github.slmpc.prismrhi:prism-rhi-core:0.1.1',
-        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-common:0.1.1',
-        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:0.1.1',
-        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:0.1.1'
+        "com.github.slmpc.prismrhi:prism-rhi-core:${prismVersion}",
+        "com.github.slmpc.prismrhi:prism-rhi-backend-opengl-common:${prismVersion}",
+        "com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:${prismVersion}",
+        "com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:${prismVersion}"
 ]
 
 base {

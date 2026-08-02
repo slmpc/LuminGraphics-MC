@@ -103,7 +103,7 @@ final class MinecraftUiResources2612 implements UiResourceResolver, AutoCloseabl
     synchronized UiTextMetrics textMetrics() {
         requireOpen();
         return UiTextMetrics.of((text, scale, fontId) -> {
-            var measured = textLayouts.measure(text, scale, font(fontId));
+            var measured = textLayouts.measure(text, scale * MinecraftUiRuntime2612.UI_TEXT_SCALE, font(fontId));
             return new UiTextMetrics.Measurement(measured.width(), measured.height());
         });
     }

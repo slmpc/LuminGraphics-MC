@@ -84,8 +84,17 @@ class AccessBytecode2612Test {
     void compiledGameRendererMixinSubmitsLuminBeforeMinecraftBlitsTheMainTarget() throws Exception {
         Shape mixin = shape("com.github.slmpc.lumingraphics.mc.v2612.mixin.GameRendererFrameMixin2612");
         assertEquals(Set.of("lumin$submitBeforeMainTargetBlit(Lnet/minecraft/client/DeltaTracker;Z"
+                        + "Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfo;)V",
+                "lumin$resizeBeforeGuiExtraction(Lnet/minecraft/client/DeltaTracker;Z"
                         + "Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfo;)V"),
                 mixin.injectMethods);
+    }
+
+    @Test
+    void compiledGameRendererMixinDoesNotReferenceATypeFromTheDefinedMixinPackage() throws Exception {
+        Shape mixin = shape("com.github.slmpc.lumingraphics.mc.v2612.mixin.GameRendererFrameMixin2612");
+        assertFalse(mixin.invokedMethods.stream().anyMatch(invocation -> invocation.startsWith(
+                "com/github/slmpc/lumingraphics/mc/v2612/mixin/MinecraftResizeCoordinator2612.")));
     }
 
     @Test

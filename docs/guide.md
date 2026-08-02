@@ -59,8 +59,13 @@ Returned font and atlas objects are borrowed from the runtime. Resource reload
 and `MinecraftUiRuntime2612.close()` release them.
 
 Each 2D frame uses a top-left-origin orthographic projection derived from the
-current framebuffer size and GUI scale. Consumers submit logical coordinates
-through `UiTree`; the runtime owns the projection uniform and descriptor.
+current framebuffer size and an effective UI scale. The runtime defaults to
+Minecraft's GUI scale; an application such as Epsilon can call
+`MinecraftUiRuntime2612.setProjectionScale` before submitting its scene to use
+its own scale. The projection scale changes the coordinate-to-framebuffer
+mapping, not font layout or text measurement. Consumers submit logical
+coordinates through `UiTree`; the runtime owns the projection uniform and
+descriptor.
 
 For 2D HUD blur, construct a `MinecraftBlurRegion2612` in GUI coordinates and
 call `MinecraftUiRuntime2612.applyBlur(region)` during an active Minecraft

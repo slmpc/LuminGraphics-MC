@@ -5,6 +5,7 @@ import com.github.slmpc.lumingraphics.render.renderer.RendererSet;
 import com.github.slmpc.lumingraphics.render.resource.DefaultRenderResources;
 import com.github.slmpc.lumingraphics.render.frame.RenderExecution;
 import com.github.slmpc.lumingraphics.render.scheduler.Render2DScheduler;
+import com.github.slmpc.lumingraphics.render.scheduler.Render2DScissorMapper;
 import com.github.slmpc.lumingraphics.text.render.TtfTextRenderer;
 import com.github.slmpc.lumingraphics.text.atlas.TtfFontLoader;
 import com.github.slmpc.lumingraphics.text.emoji.SystemEmojiAtlas;
@@ -35,6 +36,7 @@ import org.jspecify.annotations.Nullable;
 /** Minecraft 26.1.2 拥有的 Lumin {@link UiTree} 运行时。 */
 public final class MinecraftUiRuntime2612 implements AutoCloseable {
     public enum TextureFilter { NEAREST, LINEAR }
+    static final float UI_TEXT_SCALE = 0.36f;
 
     /** UI GPU 资源和默认字体的稳定输入。 */
     public record UiConfig(String defaultFontId, Map<String, Identifier> fontResources, TextureFilter textureFilter,
@@ -98,6 +100,7 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
                                 client.getMainRenderTarget().height, client.getWindow().getGuiScale()),
                         client::getMainRenderTarget));
         MinecraftUiRuntime2612 created = new MinecraftUiRuntime2612(client, config, graphics);
+        created.setProjectionScale(client.getWindow().getGuiScale());
         if (client.getResourceManager() instanceof ReloadableResourceManager reloadable) {
             ResourceManagerReloadListener listener = manager -> created.onResourceReload();
             reloadable.registerReloadListener(listener);
@@ -126,6 +129,12 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
     }
 
     public MinecraftGraphicsRuntime2612 graphicsRuntime() { requireOpen(); return graphics; }
+
+    /** 设置 Epsilon 等应用层提供的 UI 正交投影缩放，不改变字体布局倍率。 */
+    public synchronized void setProjectionScale(double scale) {
+        requireOpen();
+        graphics.setProjectionScale(scale);
+    }
 
     /** 注册一个由 Minecraft ResourceManager 读取的 TTF/OTF 字体。 */
     public synchronized void registerFont(String id, Identifier resource) {
@@ -185,9 +194,10 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
         requireOpen();
         ensureResources();
         Render2DScheduler scheduler = new Render2DScheduler(
-                RendererSet.create(renderResources, config.rendererCapacity()), config.quadtreeThreshold());
+                RendererSet.create(renderResources, config.rendererCapacity()), config.quadtreeThreshold(),
+                Render2DScissorMapper.topLeft(graphics::projectionMetrics));
         SchedulerTextBatchSink sink = new SchedulerTextBatchSink(uiResources);
-        TtfTextRenderer text = new TtfTextRenderer(sink);
+        TtfTextRenderer text = new TtfTextRenderer(UI_TEXT_SCALE, sink);
         try {
             UiScene scene = new UiScene(scheduler, Objects.requireNonNull(theme, "theme"),
                     new LuminUiRenderer(text, sink, uiResources));

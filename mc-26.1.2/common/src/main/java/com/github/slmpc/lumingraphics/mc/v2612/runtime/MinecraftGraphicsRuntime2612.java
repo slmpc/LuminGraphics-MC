@@ -53,6 +53,7 @@ public final class MinecraftGraphicsRuntime2612 implements AutoCloseable {
     private final LuminGraphicsContext luminContext;
     private final FrameCoordinator2612 frames;
     private final RuntimeLifecycle2612 lifecycle;
+    private volatile double projectionScale = Double.NaN;
 
     private MinecraftGraphicsRuntime2612(OpenGlExternalContext context, RhiInstance instance,
             OpenGlExternalDevice device, RhiQueue queue, RhiCommandPool pool, RhiCommandBuffer buffer,
@@ -155,6 +156,22 @@ public final class MinecraftGraphicsRuntime2612 implements AutoCloseable {
     }
     public Blaze3DBridge2612 blazeBridge() { requireAccess(); return blazeBridge; }
     public LuminGraphicsContext luminContext() { requireAccess(); return luminContext; }
+    /** 设置当前 Lumin 2D 帧使用的应用层正交投影缩放。 */
+    public void setProjectionScale(double scale) {
+        requireAccess();
+        if (!Double.isFinite(scale) || scale <= 0.0) {
+            throw new IllegalArgumentException("projection scale must be positive and finite");
+        }
+        projectionScale = scale;
+    }
+    /** 返回使用当前应用层缩放重建的 framebuffer 指标。 */
+    public SurfaceMetrics projectionMetrics() {
+        requireAccess();
+        SurfaceMetrics framebuffer = luminContext.metrics();
+        double scale = projectionScale;
+        if (!Double.isFinite(scale) || scale <= 0.0) scale = framebuffer.scale();
+        return new SurfaceMetrics(framebuffer.framebufferWidth(), framebuffer.framebufferHeight(), scale);
+    }
     public RenderTarget currentRenderTarget() {
         requireAccess();
         if (!frames.frameActive()) throw new IllegalStateException("No graphics frame is active");

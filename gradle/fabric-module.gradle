@@ -5,10 +5,11 @@ import groovy.json.JsonSlurper
 
 def moduleSpec = rootProject.ext.minecraftLeafSpec.call(project.path)
 def commonProject = project(moduleSpec.commonPath)
+def prismVersion = libs.versions.prism.get()
 dependencies {
     compileOnly commonProject
-    compileOnly 'com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:0.1.1'
-    compileOnly 'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:0.1.1'
+    compileOnly "com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:${prismVersion}"
+    compileOnly "com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:${prismVersion}"
 }
 
 def minecraftVersion = moduleSpec.version
@@ -24,10 +25,10 @@ def packagedLibraries = [
         "com.github.slmpc.lumingraphics:lumin-graphics-render:${luminVersion}",
         "com.github.slmpc.lumingraphics:lumin-graphics-text:${luminVersion}",
         "com.github.slmpc.lumingraphics:lumin-graphics-ui:${luminVersion}",
-        'com.github.slmpc.prismrhi:prism-rhi-core:0.1.1',
-        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-common:0.1.1',
-        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:0.1.1',
-        'com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:0.1.1'
+        "com.github.slmpc.prismrhi:prism-rhi-core:${prismVersion}",
+        "com.github.slmpc.prismrhi:prism-rhi-backend-opengl-common:${prismVersion}",
+        "com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:${prismVersion}",
+        "com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:${prismVersion}"
 ]
 
 base {

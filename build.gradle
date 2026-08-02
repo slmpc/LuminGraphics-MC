@@ -170,6 +170,7 @@ def minecraftModules = minecraftLeafSpecs.values() as List
 def publishedProjectPaths = [':bridge-contract'] + minecraftModules.collect { it.projectPath }
 def loaderVariants = minecraftModules.findAll { it.role != 'common' }.collect { it.projectPath }
 def luminVersion = libs.versions.lumin.get()
+def prismVersion = libs.versions.prism.get()
 
 gradle.allprojects { minecraftProject ->
     if (minecraftProject.path in publishedProjectPaths) {
@@ -389,7 +390,7 @@ tasks.register('architectureCheck', Test) {
                         throw new GradleException("stale 0.0.1 GAV in ${path}:${name}: ${dependency.group}:${dependency.name}:${dependency.version}")
                     }
                     def expectedVersion = dependency.group == 'com.github.slmpc.lumingraphics' ? luminVersion
-                            : dependency.group == 'com.github.slmpc.prismrhi' ? '0.1.0' : null
+                            : dependency.group == 'com.github.slmpc.prismrhi' ? prismVersion : null
                     if (expectedVersion != null && dependency.version != null && dependency.version != expectedVersion) {
                         throw new GradleException("stale published GAV in ${path}:${name}: ${dependency.group}:${dependency.name}:${dependency.version}")
                     }
