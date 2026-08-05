@@ -5,12 +5,13 @@ import com.github.slmpc.lumingraphics.core.geometry.SurfaceMetrics;
 import com.github.slmpc.lumingraphics.core.target.RenderTarget;
 import com.github.slmpc.lumingraphics.core.threading.RenderThreadGate;
 import com.github.slmpc.lumingraphics.mc.v2612.bridge.Blaze3DBridge2612;
+import com.github.slmpc.lumingraphics.mc.v2612.bridge.GlStateManagerBridge2612;
 import com.github.slmpc.prismrhi.PrismRHI;
 import com.github.slmpc.prismrhi.backend.RhiBackendProvider;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlExternalContext;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlExternalDevice;
 import com.github.slmpc.prismrhi.backend.opengl41.Gl41BackendProvider;
-import com.github.slmpc.prismrhi.backend.opengldsa.GlDsaBackendProvider;
+import com.github.slmpc.prismrhi.backend.opengl46.Gl46BackendProvider;
 import com.github.slmpc.prismrhi.command.RhiCommandBuffer;
 import com.github.slmpc.prismrhi.command.RhiCommandBufferLevel;
 import com.github.slmpc.prismrhi.command.RhiCommandPool;
@@ -24,6 +25,7 @@ import com.github.slmpc.prismrhi.queue.RhiQueue;
 import com.github.slmpc.prismrhi.queue.RhiQueueType;
 import com.github.slmpc.prismrhi.queue.RhiSubmitInfo;
 import com.mojang.blaze3d.systems.RenderSystem;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
@@ -108,15 +110,14 @@ public final class MinecraftGraphicsRuntime2612 implements AutoCloseable {
         LuminGraphicsContext lumin = null;
         try {
             context.requireCurrent();
-            RhiBackendProvider provider = context.capabilities().OpenGL45
-                    ? new GlDsaBackendProvider(context) : new Gl41BackendProvider(context);
-            if (!context.capabilities().OpenGL45 && !context.capabilities().OpenGL41) {
-                throw new IllegalStateException("Minecraft requires OpenGL 4.1 or newer");
-            }
+            RhiBackendProvider provider = isMacOs()
+                    ? new Gl41BackendProvider(context)
+                    : new Gl46BackendProvider(context);
             instance = PrismRHI.createInstance(provider, RhiInstanceCreateInfo.builder()
                     .applicationName("LuminGraphics-MC 26.1.2").build());
             device = (OpenGlExternalDevice) instance.createDevice(instance.enumeratePhysicalDevices().getFirst(),
-                    RhiDeviceCreateInfo.builder().debugName("minecraft-26.1.2").build());
+                    RhiDeviceCreateInfo.builder().debugName("minecraft-26.1.2")
+                            .glStateBridge(GlStateManagerBridge2612.INSTANCE).build());
             RhiQueue queue = device.queue(RhiQueueType.GRAPHICS);
             pool = device.createCommandPool(new RhiCommandPoolCreateInfo(RhiQueueType.GRAPHICS, true, true));
             buffer = pool.allocateCommandBuffer(RhiCommandBufferLevel.PRIMARY);
@@ -202,6 +203,10 @@ public final class MinecraftGraphicsRuntime2612 implements AutoCloseable {
     }
 
     private void requireAccess() { lifecycle.requireAccess(); }
+
+    private static boolean isMacOs() {
+        return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("mac");
+    }
 
     private static synchronized void clearCurrent(MinecraftGraphicsRuntime2612 runtime) {
         if (current == runtime) current = null;

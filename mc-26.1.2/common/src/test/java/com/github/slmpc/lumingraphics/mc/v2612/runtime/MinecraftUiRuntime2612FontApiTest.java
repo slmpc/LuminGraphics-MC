@@ -30,11 +30,32 @@ class MinecraftUiRuntime2612FontApiTest {
     }
 
     @Test
+    void defaultFontUses48PixelGlyphsAndFourPixelSdfPadding() {
+        MinecraftUiRuntime2612.UiConfig config = MinecraftUiRuntime2612.UiConfig.defaults(
+                Identifier.fromNamespaceAndPath("test", "font.ttf"));
+
+        assertEquals(48, config.fontPixelHeight());
+        assertEquals(4, config.fontPadding());
+    }
+
+    @Test
+    void rejectsFontSizesAboveTheUiBudget() {
+        Identifier font = Identifier.fromNamespaceAndPath("test", "font.ttf");
+
+        assertThrows(IllegalArgumentException.class, () -> new MinecraftUiRuntime2612.UiConfig(
+                "default", java.util.Map.of("default", font), MinecraftUiRuntime2612.TextureFilter.LINEAR,
+                64 * 1024, 16, 49, 4, 1024, 1024, 8));
+        assertThrows(IllegalArgumentException.class, () -> new MinecraftUiRuntime2612.UiConfig(
+                "default", java.util.Map.of("default", font), MinecraftUiRuntime2612.TextureFilter.LINEAR,
+                64 * 1024, 16, 48, 5, 1024, 1024, 8));
+    }
+
+    @Test
     void rejectsFontAtlasPagesThatAreNot1024By1024() {
         Identifier font = Identifier.fromNamespaceAndPath("test", "font.ttf");
 
         assertThrows(IllegalArgumentException.class, () -> new MinecraftUiRuntime2612.UiConfig(
                 "default", java.util.Map.of("default", font), MinecraftUiRuntime2612.TextureFilter.LINEAR,
-                64 * 1024, 16, 72, 16, 512, 512, 8));
+                64 * 1024, 16, 48, 4, 512, 512, 8));
     }
 }

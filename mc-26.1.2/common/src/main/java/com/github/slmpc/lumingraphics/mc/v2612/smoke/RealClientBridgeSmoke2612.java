@@ -2,13 +2,14 @@ package com.github.slmpc.lumingraphics.mc.v2612.smoke;
 
 import com.github.slmpc.lumingraphics.mc.v2612.mixin.GlAccess2612;
 import com.github.slmpc.lumingraphics.mc.v2612.bridge.Blaze3DBridge2612;
+import com.github.slmpc.lumingraphics.mc.v2612.bridge.GlStateManagerBridge2612;
 import com.github.slmpc.prismrhi.PrismRHI;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlExternalContext;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlExternalDevice;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlNativeObjectTypes;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlShaderAdoption;
 import com.github.slmpc.prismrhi.backend.opengl41.Gl41BackendProvider;
-import com.github.slmpc.prismrhi.backend.opengldsa.GlDsaBackendProvider;
+import com.github.slmpc.prismrhi.backend.opengl46.Gl46BackendProvider;
 import com.github.slmpc.prismrhi.device.RhiDeviceCreateInfo;
 import com.github.slmpc.prismrhi.format.RhiExtent3D;
 import com.github.slmpc.prismrhi.format.RhiFormat;
@@ -55,6 +56,7 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.Locale;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -94,10 +96,11 @@ public final class RealClientBridgeSmoke2612 {
         RenderSystem.assertOnRenderThread();
         context.requireCurrent();
         RhiInstance instance = PrismRHI.createInstance(
-                GL.getCapabilities().OpenGL45 ? new GlDsaBackendProvider(context) : new Gl41BackendProvider(context),
+                isMacOs() ? new Gl41BackendProvider(context) : new Gl46BackendProvider(context),
                 RhiInstanceCreateInfo.builder().build());
         OpenGlExternalDevice prism = (OpenGlExternalDevice) instance.createDevice(
-                instance.enumeratePhysicalDevices().getFirst(), RhiDeviceCreateInfo.builder().build());
+                instance.enumeratePhysicalDevices().getFirst(), RhiDeviceCreateInfo.builder()
+                        .glStateBridge(GlStateManagerBridge2612.INSTANCE).build());
         Blaze3DBridge2612 bridge = new Blaze3DBridge2612(prism);
 
         GpuTexture blazeTexture = RenderSystem.getDevice().createTexture(() -> "lumin-smoke-blaze",
@@ -274,4 +277,5 @@ public final class RealClientBridgeSmoke2612 {
     private static String sha256(Path path) throws IOException, NoSuchAlgorithmException { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(path))); }
     private static String escape(String value) { return value == null ? "" : value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n"); }
     private static void require(boolean condition, String message) { if (!condition) throw new IllegalStateException(message); }
+    private static boolean isMacOs() { return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("mac"); }
 }

@@ -227,7 +227,7 @@ final class ArchitectureGuardTest {
         reject(parts.length != 3, path, "malformed GAV " + coordinate);
         String expectedVersion = switch (parts[0]) {
             case "com.github.slmpc.lumingraphics" -> "1.2.0";
-            case "com.github.slmpc.prismrhi" -> "0.1.0";
+            case "com.github.slmpc.prismrhi" -> "0.2.0";
             default -> null;
         };
         reject(expectedVersion != null && !parts[2].equals(expectedVersion), path, "stale published GAV " + coordinate);

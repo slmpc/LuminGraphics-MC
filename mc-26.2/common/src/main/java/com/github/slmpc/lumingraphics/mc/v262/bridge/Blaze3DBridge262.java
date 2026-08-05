@@ -87,7 +87,7 @@ public final class Blaze3DBridge262 {
         if (bridgeToken.context() != bridgeContext) throw new IllegalArgumentException("bridge token context mismatch");
         rhiContext.requireSameContext(rhiDevice.contextIdentity());
         rhiToken.requireValid();
-        if (rhiDevice.api() != BackendApi.OPENGL_41 && rhiDevice.api() != BackendApi.OPENGL_DSA) {
+        if (rhiDevice.api() != BackendApi.OPENGL_41 && rhiDevice.api() != BackendApi.OPENGL_46) {
             throw new IllegalArgumentException("Minecraft 26.2 zero-copy bridge requires an OpenGL Prism device");
         }
     }

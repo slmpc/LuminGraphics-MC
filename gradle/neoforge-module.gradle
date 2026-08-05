@@ -23,7 +23,7 @@ def packagedLibraries = [
         "com.github.slmpc.prismrhi:prism-rhi-core:${prismVersion}",
         "com.github.slmpc.prismrhi:prism-rhi-backend-opengl-common:${prismVersion}",
         "com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:${prismVersion}",
-        "com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:${prismVersion}"
+        "com.github.slmpc.prismrhi:prism-rhi-backend-opengl46:${prismVersion}"
 ]
 
 base {

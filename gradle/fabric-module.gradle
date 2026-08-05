@@ -9,7 +9,7 @@ def prismVersion = libs.versions.prism.get()
 dependencies {
     compileOnly commonProject
     compileOnly "com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:${prismVersion}"
-    compileOnly "com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:${prismVersion}"
+    compileOnly "com.github.slmpc.prismrhi:prism-rhi-backend-opengl46:${prismVersion}"
 }
 
 def minecraftVersion = moduleSpec.version
@@ -28,7 +28,7 @@ def packagedLibraries = [
         "com.github.slmpc.prismrhi:prism-rhi-core:${prismVersion}",
         "com.github.slmpc.prismrhi:prism-rhi-backend-opengl-common:${prismVersion}",
         "com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:${prismVersion}",
-        "com.github.slmpc.prismrhi:prism-rhi-backend-opengl-dsa:${prismVersion}"
+        "com.github.slmpc.prismrhi:prism-rhi-backend-opengl46:${prismVersion}"
 ]
 
 base {

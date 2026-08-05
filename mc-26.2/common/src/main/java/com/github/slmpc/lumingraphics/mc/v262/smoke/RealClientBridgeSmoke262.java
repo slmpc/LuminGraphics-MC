@@ -6,6 +6,7 @@ import com.github.slmpc.lumingraphics.mc.bridge.BridgeInvalidationToken;
 import com.github.slmpc.lumingraphics.mc.bridge.BridgeLease;
 import com.github.slmpc.lumingraphics.mc.v262.access.MixinGlObjectFactory262;
 import com.github.slmpc.lumingraphics.mc.v262.access.GlBufferDsaAccess262;
+import com.github.slmpc.lumingraphics.mc.v262.bridge.GlStateManagerBridge262;
 import com.github.slmpc.lumingraphics.mc.v262.mixin.GlInvokers262;
 import com.github.slmpc.lumingraphics.mc.v262.bridge.Blaze3DBridge262;
 import com.github.slmpc.prismrhi.PrismRHI;
@@ -14,7 +15,7 @@ import com.github.slmpc.prismrhi.backend.opengl.OpenGlExternalDevice;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlNativeObjectTypes;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlShaderAdoption;
 import com.github.slmpc.prismrhi.backend.opengl41.Gl41BackendProvider;
-import com.github.slmpc.prismrhi.backend.opengldsa.GlDsaBackendProvider;
+import com.github.slmpc.prismrhi.backend.opengl46.Gl46BackendProvider;
 import com.github.slmpc.prismrhi.device.RhiDeviceCreateInfo;
 import com.github.slmpc.prismrhi.format.RhiExtent3D;
 import com.github.slmpc.prismrhi.format.RhiFormat;
@@ -58,6 +59,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.HexFormat;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -91,9 +93,10 @@ public final class RealClientBridgeSmoke262 {
 
     private static void positive(Minecraft client, OpenGlExternalContext context, String loader, Path output) throws Exception {
         RenderSystem.assertOnRenderThread(); context.requireCurrent();
-        RhiInstance instance = PrismRHI.createInstance(GL.getCapabilities().OpenGL45
-                ? new GlDsaBackendProvider(context) : new Gl41BackendProvider(context), RhiInstanceCreateInfo.builder().build());
-        OpenGlExternalDevice prism = (OpenGlExternalDevice) instance.createDevice(instance.enumeratePhysicalDevices().getFirst(), RhiDeviceCreateInfo.builder().build());
+        RhiInstance instance = PrismRHI.createInstance(isMacOs()
+                ? new Gl41BackendProvider(context) : new Gl46BackendProvider(context), RhiInstanceCreateInfo.builder().build());
+        OpenGlExternalDevice prism = (OpenGlExternalDevice) instance.createDevice(instance.enumeratePhysicalDevices().getFirst(),
+                RhiDeviceCreateInfo.builder().glStateBridge(GlStateManagerBridge262.INSTANCE).build());
         BridgeContextIdentity bridgeContext = BridgeContextIdentity.create("minecraft-26.2-" + loader);
         BridgeInvalidationToken bridgeToken = bridgeContext.newInvalidationToken();
         Blaze3DBridge262 bridge = new Blaze3DBridge262(prism, bridgeContext, bridgeToken, context.contextIdentity(),
@@ -202,4 +205,5 @@ public final class RealClientBridgeSmoke262 {
     private static String hash(Path p)throws Exception{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(p)));}
     private static String esc(String v){return v==null?"":v.replace("\\","\\\\").replace("\"","\\\"").replace("\r","\\r").replace("\n","\\n");}
     private static void require(boolean c,String m){if(!c)throw new IllegalStateException(m);}
+    private static boolean isMacOs(){return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("mac");}
 }

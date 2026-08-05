@@ -363,7 +363,7 @@ class Blaze3DBridge262ReverseFailureTest {
     private static final class Image implements RhiImage {
         private final long handle;
         private Image(long handle) { this.handle = handle; }
-        @Override public BackendApi api() { return BackendApi.OPENGL_DSA; }
+        @Override public BackendApi api() { return BackendApi.OPENGL_46; }
         @Override public RhiExtent3D extent() { return new RhiExtent3D(4, 4, 1); }
         @Override public RhiFormat format() { return RhiFormat.RGBA8_UNORM; }
         @Override public Optional<RhiNativeObject> getNativeObject(RhiNativeObjectType type) {
@@ -387,7 +387,7 @@ class Blaze3DBridge262ReverseFailureTest {
             this.nativeType = nativeType;
         }
 
-        @Override public BackendApi api() { return BackendApi.OPENGL_DSA; }
+        @Override public BackendApi api() { return BackendApi.OPENGL_46; }
         @Override public RhiExtent3D extent() { return new RhiExtent3D(4, 4, 1); }
         @Override public RhiFormat format() { return RhiFormat.RGBA8_UNORM; }
         @Override public RhiOwnership ownership() { return RhiOwnership.BORROWED; }
@@ -424,7 +424,7 @@ class Blaze3DBridge262ReverseFailureTest {
     private static final class TrackingImage implements RhiImage {
         private final List<String> closes;
         private TrackingImage(List<String> closes) { this.closes = closes; }
-        @Override public BackendApi api() { return BackendApi.OPENGL_DSA; }
+        @Override public BackendApi api() { return BackendApi.OPENGL_46; }
         @Override public RhiExtent3D extent() { return new RhiExtent3D(4, 4, 1); }
         @Override public RhiFormat format() { return RhiFormat.RGBA8_UNORM; }
         @Override public void close() { closes.add("image"); }
@@ -440,7 +440,7 @@ class Blaze3DBridge262ReverseFailureTest {
     private static final class Buffer implements RhiBuffer {
         private final long handle;
         private Buffer(long handle) { this.handle = handle; }
-        @Override public BackendApi api() { return BackendApi.OPENGL_DSA; }
+        @Override public BackendApi api() { return BackendApi.OPENGL_46; }
         @Override public long size() { return 64; }
         @Override public Optional<RhiNativeObject> getNativeObject(RhiNativeObjectType type) {
             return Optional.of(new RhiNativeObject(OpenGlNativeObjectTypes.BUFFER, handle));
@@ -451,7 +451,7 @@ class Blaze3DBridge262ReverseFailureTest {
     private static final class Shader implements RhiShader {
         private final long handle;
         private Shader(long handle) { this.handle = handle; }
-        @Override public BackendApi api() { return BackendApi.OPENGL_DSA; }
+        @Override public BackendApi api() { return BackendApi.OPENGL_46; }
         @Override public RhiShaderDesc desc() { return new RhiShaderDesc(RhiShaderStage.VERTEX, "main", "test"); }
         @Override public Optional<RhiShaderBinary> binary() { return Optional.empty(); }
         @Override public RhiOwnership ownership() { return RhiOwnership.BORROWED; }
@@ -472,7 +472,7 @@ class Blaze3DBridge262ReverseFailureTest {
             this.adoptedImage = adoptedImage;
             this.adoptedView = adoptedView;
         }
-        @Override public BackendApi api() { return BackendApi.OPENGL_DSA; }
+        @Override public BackendApi api() { return BackendApi.OPENGL_46; }
         @Override public RhiContextIdentity contextIdentity() { return context; }
         @Override public OpenGlExternalContext externalContext() { return null; }
         @Override public RhiQueue queue(RhiQueueType type) { throw unsupported(); }

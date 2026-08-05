@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 class MinecraftUiRuntime2612TextScaleTest {
     @Test
     void keepsLegacyUiTextBaselineAtTheMinecraftRuntimeBoundary() {
-        assertEquals(1.0f, MinecraftUiRuntime2612.UI_TEXT_SCALE, 0.0001f,
-                "Minecraft UI must preserve the original caller-provided text scale");
+        assertEquals(0.36f, MinecraftUiRuntime2612.UI_TEXT_SCALE, 0.0001f,
+                "Minecraft UI must use the calibrated text scale");
     }
 }

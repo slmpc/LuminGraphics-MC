@@ -37,6 +37,8 @@ import org.jspecify.annotations.Nullable;
 public final class MinecraftUiRuntime2612 implements AutoCloseable {
     public enum TextureFilter { NEAREST, LINEAR }
     static final float UI_TEXT_SCALE = 0.36f;
+    static final int MAX_FONT_PIXEL_HEIGHT = 48;
+    static final int MAX_FONT_SDF_PADDING = 4;
     static final int FONT_ATLAS_WIDTH = 1024;
     static final int FONT_ATLAS_HEIGHT = 1024;
 
@@ -53,9 +55,13 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
                 throw new IllegalArgumentException("defaultFontId is not registered: " + defaultFontId);
             }
             Objects.requireNonNull(textureFilter, "textureFilter");
-            if (rendererCapacity <= 0 || quadtreeThreshold <= 0 || fontPixelHeight <= 0 || fontPadding < 0
+            if (rendererCapacity <= 0 || quadtreeThreshold <= 0
                     || atlasWidth <= 0 || atlasHeight <= 0 || maxAtlasPages <= 0) {
                 throw new IllegalArgumentException("Minecraft UI resource sizes are invalid");
+            }
+            if (fontPixelHeight <= 0 || fontPixelHeight > MAX_FONT_PIXEL_HEIGHT || fontPadding <= 0
+                    || fontPadding > MAX_FONT_SDF_PADDING || fontPixelHeight <= fontPadding * 2) {
+                throw new IllegalArgumentException("Minecraft UI font sizes must be at most 48px with 4px SDF padding");
             }
             if (atlasWidth != FONT_ATLAS_WIDTH || atlasHeight != FONT_ATLAS_HEIGHT) {
                 throw new IllegalArgumentException("Font atlas pages must be exactly 1024 x 1024 pixels");
@@ -64,7 +70,8 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
 
         public static UiConfig defaults(Identifier defaultFontResource) {
             return new UiConfig("default", Map.of("default", defaultFontResource), TextureFilter.LINEAR,
-                    64 * 1024, 16, 72, 16, FONT_ATLAS_WIDTH, FONT_ATLAS_HEIGHT, 8);
+                    64 * 1024, 16, MAX_FONT_PIXEL_HEIGHT, MAX_FONT_SDF_PADDING,
+                    FONT_ATLAS_WIDTH, FONT_ATLAS_HEIGHT, 8);
         }
     }
 

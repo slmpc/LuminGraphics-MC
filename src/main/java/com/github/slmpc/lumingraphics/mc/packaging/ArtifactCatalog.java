@@ -9,7 +9,7 @@ import java.util.List;
 final class ArtifactCatalog {
     static final String LUMIN_VERSION = "1.2.0";
     static final String MC_VERSION = "1.2.0";
-    static final String PRISM_VERSION = "0.1.0";
+    static final String PRISM_VERSION = "0.2.0";
     static final List<Coordinate> EXPECTED = List.of(
             new Coordinate("com.github.slmpc.lumingraphics.mc", "bridge-contract", MC_VERSION),
             new Coordinate("com.github.slmpc.lumingraphics", "lumin-graphics-core", LUMIN_VERSION),
@@ -19,7 +19,7 @@ final class ArtifactCatalog {
             new Coordinate("com.github.slmpc.prismrhi", "prism-rhi-core", PRISM_VERSION),
             new Coordinate("com.github.slmpc.prismrhi", "prism-rhi-backend-opengl-common", PRISM_VERSION),
             new Coordinate("com.github.slmpc.prismrhi", "prism-rhi-backend-opengl41", PRISM_VERSION),
-            new Coordinate("com.github.slmpc.prismrhi", "prism-rhi-backend-opengl-dsa", PRISM_VERSION));
+            new Coordinate("com.github.slmpc.prismrhi", "prism-rhi-backend-opengl46", PRISM_VERSION));
 
     private ArtifactCatalog() {}
 

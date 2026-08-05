@@ -57,8 +57,10 @@ antialiasing policy remain application state.
 
 Returned font and atlas objects are borrowed from the runtime. Resource reload
 and `MinecraftUiRuntime2612.close()` release them. Every TTF atlas page is fixed
-at `1024 x 1024` pixels; `UiConfig` rejects any other dimensions. Atlas revisions keep image, descriptor, sampler, and
-Minecraft texture ownership only while referenced; staging buffers and retired
+at `1024 x 1024` pixels; `UiConfig` rejects any other dimensions. The default UI font rasterization is capped at
+`48` pixels per glyph with `4` pixels of SDF padding, and `UiConfig` rejects larger values. The configured glyph height
+includes the SDF padding on both sides. Atlas revisions keep image, descriptor, sampler, and Minecraft texture ownership
+only while referenced; staging buffers and retired
 revisions are released after the frame command buffer has submitted, rather
 than accumulating until runtime shutdown.
 
@@ -79,11 +81,11 @@ GPU resources after frame completion, and releases all remaining resources on
 `close()`. This API intentionally does not expose generic post-processing or
 glow-mask behavior.
 
-## Local SNAPSHOT publishing
+## Local release publishing
 
-Development publications use `1.1.0-SNAPSHOT` and consume LuminGraphics
-`1.1.0-SNAPSHOT`. Publish LuminGraphics first, then republish these matching
-loader artifacts after each edit without changing either version:
+The current release uses LuminGraphics-MC `1.2.0`, LuminGraphics `1.2.0`, and
+PrismRHI `0.2.0`. Publish PrismRHI first, then LuminGraphics, then these
+matching loader artifacts:
 
 ```powershell
 cd D:\Dev\ChenMeng\LuminGraphics

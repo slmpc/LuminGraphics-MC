@@ -238,7 +238,7 @@ tasks.register('verifyPublishedCoordinates') {
     group = 'verification'
     description = 'Inspects and freshly resolves every current publication from the explicit local Maven repository.'
     doLast {
-        if (project.version.toString() != '1.1.0-SNAPSHOT') {
+        if (project.version.toString() != '1.2.0') {
             throw new GradleException("Unexpected development publication version: ${project.version}")
         }
         def repositoryProperty = providers.gradleProperty('publishRepository').orNull
@@ -251,19 +251,8 @@ tasks.register('verifyPublishedCoordinates') {
             def publicationVersion = project.version.toString()
             def relative = "com/github/slmpc/lumingraphics/mc/${artifactId}/${publicationVersion}"
             def coordinateDirectory = new File(repositoryRoot, relative)
-            def metadataFile = new File(coordinateDirectory, 'maven-metadata.xml')
-            if (!metadataFile.isFile() || metadataFile.length() == 0) {
-                throw new GradleException("Missing Maven SNAPSHOT metadata for ${artifactId}: ${coordinateDirectory}")
-            }
-            def metadata = javax.xml.parsers.DocumentBuilderFactory.newInstance()
-                    .newDocumentBuilder().parse(metadataFile)
-            def snapshotVersion = javax.xml.xpath.XPathFactory.newInstance().newXPath().evaluate(
-                    "string(/metadata/versioning/snapshotVersions/snapshotVersion[extension='jar' and not(classifier)]/value)", metadata)
-            if (snapshotVersion == null || snapshotVersion.isEmpty()) {
-                throw new GradleException("Missing current JAR snapshot value for ${artifactId}: ${metadataFile}")
-            }
-            def jarFile = new File(coordinateDirectory, "${artifactId}-${snapshotVersion}.jar")
-            def pomFile = new File(coordinateDirectory, "${artifactId}-${snapshotVersion}.pom")
+            def jarFile = new File(coordinateDirectory, "${artifactId}-${publicationVersion}.jar")
+            def pomFile = new File(coordinateDirectory, "${artifactId}-${publicationVersion}.pom")
             if (!jarFile.isFile() || jarFile.length() == 0 || !pomFile.isFile() || pomFile.length() == 0) {
                 throw new GradleException("Missing published JAR/POM for ${artifactId}: ${coordinateDirectory}")
             }
@@ -280,7 +269,7 @@ tasks.register('verifyPublishedCoordinates') {
             if (resolvedDigest != digest) {
                 throw new GradleException("Fresh resolution is stale for ${artifactId}: ${resolved}")
             }
-            println "PUBLISHED_COORDINATE_OK gav=com.github.slmpc.lumingraphics.mc:${artifactId}:${publicationVersion} resolvedVersion=${snapshotVersion} sha256=${digest} jar=${jarFile} pom=${pomFile} cache=${resolved}"
+            println "PUBLISHED_COORDINATE_OK gav=com.github.slmpc.lumingraphics.mc:${artifactId}:${publicationVersion} resolvedVersion=${publicationVersion} sha256=${digest} jar=${jarFile} pom=${pomFile} cache=${resolved}"
         }
     }
 }
