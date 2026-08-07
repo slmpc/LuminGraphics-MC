@@ -32,6 +32,7 @@ final class MinecraftUiResources2612 implements UiResourceResolver, AutoCloseabl
     private final MinecraftUiRuntime2612.UiConfig config;
     private final Map<TextureKey, BorrowedTexture> textures = new LinkedHashMap<>();
     private final Map<String, FontResource> fontSources = new LinkedHashMap<>();
+    private final Map<String, Object> fontSourceKeys = new LinkedHashMap<>();
     private final Map<String, TtfFontLoader> fonts = new LinkedHashMap<>();
     private final TextLayoutEngine textLayouts = new TextLayoutEngine();
     private MinecraftGlyphAtlasUploader2612 uploader;
@@ -46,7 +47,10 @@ final class MinecraftUiResources2612 implements UiResourceResolver, AutoCloseabl
         this.runtime = runtime;
         this.renderResources = renderResources;
         this.config = config;
-        config.fontResources().forEach((id, resource) -> fontSources.put(id, resource(resource)));
+        config.fontResources().forEach((id, resource) -> {
+            fontSources.put(id, resource(resource));
+            fontSourceKeys.put(id, new ResourceFontKey(resource));
+        });
         defaultFontId = config.defaultFontId();
     }
 
@@ -86,7 +90,7 @@ final class MinecraftUiResources2612 implements UiResourceResolver, AutoCloseabl
     }
 
     synchronized void registerResourceFont(String id, Identifier resource) {
-        registerFont(id, resource(resource));
+        registerFont(id, resource(resource), new ResourceFontKey(Objects.requireNonNull(resource, "resource")));
     }
 
     synchronized void useDefaultFont(String id) {
@@ -96,7 +100,8 @@ final class MinecraftUiResources2612 implements UiResourceResolver, AutoCloseabl
     }
 
     synchronized void useCustomDefaultFont(String id, Path path) {
-        registerFont(id, FontResource.path(path));
+        Path normalized = Objects.requireNonNull(path, "path").toAbsolutePath().normalize();
+        registerFont(id, FontResource.path(normalized), new PathFontKey(normalized));
         defaultFontId = id;
     }
 
@@ -164,10 +169,14 @@ final class MinecraftUiResources2612 implements UiResourceResolver, AutoCloseabl
         };
     }
 
-    private void registerFont(String id, FontResource source) {
+    private void registerFont(String id, FontResource source, Object sourceKey) {
         requireOpen();
         if (id == null || id.isBlank()) throw new IllegalArgumentException("font id is blank");
-        FontResource previous = fontSources.put(id, Objects.requireNonNull(source, "source"));
+        Objects.requireNonNull(source, "source");
+        Objects.requireNonNull(sourceKey, "sourceKey");
+        if (Objects.equals(fontSourceKeys.get(id), sourceKey)) return;
+        FontResource previous = fontSources.put(id, source);
+        fontSourceKeys.put(id, sourceKey);
         TtfFontLoader loaded = fonts.remove(id);
         if (loaded != null) loaded.close();
         if (previous == null && defaultFontId == null) defaultFontId = id;
@@ -206,6 +215,10 @@ final class MinecraftUiResources2612 implements UiResourceResolver, AutoCloseabl
     }
 
     private record TextureKey(Identifier id, MinecraftUiRuntime2612.TextureFilter filter) { }
+
+    private record ResourceFontKey(Identifier id) { }
+
+    private record PathFontKey(Path path) { }
 
     private static final class BorrowedTexture implements AutoCloseable {
         private final GlTextureView minecraftView;

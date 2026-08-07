@@ -152,8 +152,10 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
     public synchronized void registerFont(String id, Identifier resource) {
         requireOpen();
         if (id == null || id.isBlank()) throw new IllegalArgumentException("font id is blank");
-        fontResources.put(id, Objects.requireNonNull(resource, "resource"));
-        if (uiResources != null) uiResources.registerResourceFont(id, resource);
+        Identifier value = Objects.requireNonNull(resource, "resource");
+        if (Objects.equals(fontResources.get(id), value)) return;
+        fontResources.put(id, value);
+        if (uiResources != null) uiResources.registerResourceFont(id, value);
     }
 
     /** 将已注册字体设为未指定 font ID 时使用的默认字体。 */
@@ -212,7 +214,7 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
         TtfTextRenderer text = new TtfTextRenderer(UI_TEXT_SCALE, sink);
         try {
             UiScene scene = new UiScene(scheduler, Objects.requireNonNull(theme, "theme"),
-                    new LuminUiRenderer(text, sink, uiResources));
+                    new LuminUiRenderer(text, sink, uiResources), scenes::remove);
             scenes.add(scene);
             return scene;
         } catch (RuntimeException failure) {

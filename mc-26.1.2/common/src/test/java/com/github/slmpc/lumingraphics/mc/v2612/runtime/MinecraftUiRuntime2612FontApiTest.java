@@ -6,7 +6,12 @@ import com.github.slmpc.lumingraphics.text.emoji.SystemEmojiAtlas;
 import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MinecraftUiRuntime2612FontApiTest {
@@ -57,5 +62,46 @@ class MinecraftUiRuntime2612FontApiTest {
         assertThrows(IllegalArgumentException.class, () -> new MinecraftUiRuntime2612.UiConfig(
                 "default", java.util.Map.of("default", font), MinecraftUiRuntime2612.TextureFilter.LINEAR,
                 64 * 1024, 16, 48, 4, 512, 512, 8));
+    }
+
+    @Test
+    void registeringTheSameResourceFontKeepsTheExistingSource() throws Exception {
+        Identifier font = Identifier.fromNamespaceAndPath("test", "font.ttf");
+        MinecraftUiResources2612 resources = new MinecraftUiResources2612(null, null, null,
+                MinecraftUiRuntime2612.UiConfig.defaults(font));
+        try {
+            Field sourcesField = MinecraftUiResources2612.class.getDeclaredField("fontSources");
+            sourcesField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> sources = (Map<String, Object>) sourcesField.get(resources);
+            Object initial = sources.get("default");
+
+            resources.registerResourceFont("default", font);
+
+            assertSame(initial, sources.get("default"));
+        } finally {
+            resources.close();
+        }
+    }
+
+    @Test
+    void registeringAChangedResourceFontReplacesTheExistingSource() throws Exception {
+        Identifier first = Identifier.fromNamespaceAndPath("test", "font.ttf");
+        Identifier second = Identifier.fromNamespaceAndPath("test", "other.ttf");
+        MinecraftUiResources2612 resources = new MinecraftUiResources2612(null, null, null,
+                MinecraftUiRuntime2612.UiConfig.defaults(first));
+        try {
+            Field sourcesField = MinecraftUiResources2612.class.getDeclaredField("fontSources");
+            sourcesField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> sources = (Map<String, Object>) sourcesField.get(resources);
+            Object initial = sources.get("default");
+
+            resources.registerResourceFont("default", second);
+
+            assertNotSame(initial, sources.get("default"));
+        } finally {
+            resources.close();
+        }
     }
 }
