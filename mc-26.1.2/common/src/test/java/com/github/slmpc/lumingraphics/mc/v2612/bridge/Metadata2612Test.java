@@ -9,7 +9,7 @@ import com.github.slmpc.lumingraphics.mc.v2612.text.FontMetricsAdapter;
 import com.github.slmpc.lumingraphics.text.atlas.GlyphDescriptor;
 import com.github.slmpc.lumingraphics.text.font.FontLoader;
 import com.github.slmpc.lumingraphics.text.font.FontMetrics;
-import com.github.slmpc.prismrhi.format.RhiFormat;
+import com.github.slmpc.prismrhi.format.PRhiFormat;
 import com.mojang.blaze3d.textures.TextureFormat;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -19,13 +19,13 @@ import org.junit.jupiter.api.Test;
 class Metadata2612Test {
     @Test
     void textureFormatsAreExhaustiveAndRejectUnrepresentableValues() {
-        assertEquals(RhiFormat.RGBA8_UNORM, Blaze3DBridge2612.toRhiFormat(TextureFormat.RGBA8));
-        assertEquals(RhiFormat.R8_UNORM, Blaze3DBridge2612.toRhiFormat(TextureFormat.RED8));
-        assertEquals(RhiFormat.D32_FLOAT, Blaze3DBridge2612.toRhiFormat(TextureFormat.DEPTH32));
+        assertEquals(PRhiFormat.RGBA8_UNORM, Blaze3DBridge2612.toRhiFormat(TextureFormat.RGBA8));
+        assertEquals(PRhiFormat.R8_UNORM, Blaze3DBridge2612.toRhiFormat(TextureFormat.RED8));
+        assertEquals(PRhiFormat.D32_FLOAT, Blaze3DBridge2612.toRhiFormat(TextureFormat.DEPTH32));
         assertThrows(IllegalArgumentException.class,
                 () -> Blaze3DBridge2612.toRhiFormat(TextureFormat.RED8I));
         assertThrows(IllegalArgumentException.class,
-                () -> Blaze3DBridge2612.toBlazeFormat(RhiFormat.BGRA8_UNORM));
+                () -> Blaze3DBridge2612.toBlazeFormat(PRhiFormat.BGRA8_UNORM));
     }
 
     @Test

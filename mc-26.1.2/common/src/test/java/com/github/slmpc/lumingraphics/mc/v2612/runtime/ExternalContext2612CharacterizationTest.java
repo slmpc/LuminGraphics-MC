@@ -4,13 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.github.slmpc.prismrhi.context.RhiInvalidationToken;
+import com.github.slmpc.prismrhi.context.PRhiInvalidationToken;
 import org.junit.jupiter.api.Test;
 
 class ExternalContext2612CharacterizationTest {
     @Test
     void existingExternalContextTokenInvalidatesOnceAndRejectsUse() {
-        RhiInvalidationToken token = new RhiInvalidationToken();
+        PRhiInvalidationToken token = new PRhiInvalidationToken();
 
         assertTrue(token.isValid());
         assertTrue(token.invalidate());

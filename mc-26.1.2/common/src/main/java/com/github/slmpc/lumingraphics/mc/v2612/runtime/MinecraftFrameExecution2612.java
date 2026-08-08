@@ -4,10 +4,10 @@ import com.github.slmpc.lumingraphics.core.geometry.SurfaceMetrics;
 import com.github.slmpc.lumingraphics.core.target.RenderTarget;
 import com.github.slmpc.lumingraphics.render.frame.RenderExecution;
 import com.github.slmpc.lumingraphics.render.resource.DefaultRenderResources;
-import com.github.slmpc.prismrhi.rendering.RhiAttachmentLoadOp;
-import com.github.slmpc.prismrhi.rendering.RhiRect2D;
-import com.github.slmpc.prismrhi.rendering.RhiRenderingAttachment;
-import com.github.slmpc.prismrhi.rendering.RhiRenderingInfo;
+import com.github.slmpc.prismrhi.rendering.PRhiAttachmentLoadOp;
+import com.github.slmpc.prismrhi.rendering.PRhiRect2D;
+import com.github.slmpc.prismrhi.rendering.PRhiRenderingAttachment;
+import com.github.slmpc.prismrhi.rendering.PRhiRenderingInfo;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import org.joml.Matrix4f;
@@ -27,10 +27,10 @@ final class MinecraftFrameExecution2612 implements AutoCloseable {
         resources.updateFrameUniforms(captureUniforms(framebufferMetrics, projectionMetrics));
         execution = new RenderExecution(runtime.commandBuffer(), resources, runtime.activeFrameId(),
                 runtime.lastEndedFrameId(), target.width(), target.height());
-        RhiRenderingInfo.Builder rendering = RhiRenderingInfo.builder(RhiRect2D.of(target.width(), target.height()))
-                .color(RhiRenderingAttachment.color(target.colorView()));
+        PRhiRenderingInfo.Builder rendering = PRhiRenderingInfo.builder(PRhiRect2D.of(target.width(), target.height()))
+                .color(PRhiRenderingAttachment.color(target.colorView()));
         target.depthView().ifPresent(depth -> rendering.depth(
-                RhiRenderingAttachment.depth(depth, RhiAttachmentLoadOp.LOAD, 1.0f)));
+                PRhiRenderingAttachment.depth(depth, PRhiAttachmentLoadOp.LOAD, 1.0f)));
         execution.commands().beginRendering(rendering.build());
     }
 

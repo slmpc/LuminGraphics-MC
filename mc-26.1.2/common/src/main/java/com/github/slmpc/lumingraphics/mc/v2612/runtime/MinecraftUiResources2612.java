@@ -9,12 +9,12 @@ import com.github.slmpc.lumingraphics.text.layout.TextLayoutEngine;
 import com.github.slmpc.lumingraphics.ui.resource.UiResourceNotFoundException;
 import com.github.slmpc.lumingraphics.ui.resource.UiResourceResolver;
 import com.github.slmpc.lumingraphics.ui.text.UiTextMetrics;
-import com.github.slmpc.prismrhi.descriptor.RhiDescriptorSet;
-import com.github.slmpc.prismrhi.resource.RhiFilter;
-import com.github.slmpc.prismrhi.resource.RhiImageView;
-import com.github.slmpc.prismrhi.resource.RhiSampler;
-import com.github.slmpc.prismrhi.resource.RhiSamplerAddressMode;
-import com.github.slmpc.prismrhi.resource.RhiSamplerCreateInfo;
+import com.github.slmpc.prismrhi.descriptor.PRhiDescriptorSet;
+import com.github.slmpc.prismrhi.resource.PRhiFilter;
+import com.github.slmpc.prismrhi.resource.PRhiImageView;
+import com.github.slmpc.prismrhi.resource.PRhiSampler;
+import com.github.slmpc.prismrhi.resource.PRhiSamplerAddressMode;
+import com.github.slmpc.prismrhi.resource.PRhiSamplerCreateInfo;
 import com.mojang.blaze3d.opengl.GlTextureView;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -136,16 +136,16 @@ final class MinecraftUiResources2612 implements UiResourceResolver, AutoCloseabl
     }
 
     private BorrowedTexture borrow(TextureKey key, GlTextureView minecraftView) {
-        RhiImageView view = runtime.blazeBridge().fromBlazeTextureView(minecraftView).orElseThrow();
-        RhiFilter filter = key.filter() == MinecraftUiRuntime2612.TextureFilter.NEAREST
-                ? RhiFilter.NEAREST : RhiFilter.LINEAR;
-        RhiSampler sampler = null;
-        RhiDescriptorSet descriptor = null;
+        PRhiImageView view = runtime.blazeBridge().fromBlazeTextureView(minecraftView).orElseThrow();
+        PRhiFilter filter = key.filter() == MinecraftUiRuntime2612.TextureFilter.NEAREST
+                ? PRhiFilter.NEAREST : PRhiFilter.LINEAR;
+        PRhiSampler sampler = null;
+        PRhiDescriptorSet descriptor = null;
         Render2DTexture texture = new Render2DTexture.Resource(key.id().toString());
         try {
-            sampler = runtime.device().createSampler(new RhiSamplerCreateInfo(filter, filter,
-                    RhiSamplerAddressMode.CLAMP_TO_EDGE, RhiSamplerAddressMode.CLAMP_TO_EDGE,
-                    RhiSamplerAddressMode.CLAMP_TO_EDGE, 0.0f));
+            sampler = runtime.device().createSampler(new PRhiSamplerCreateInfo(filter, filter,
+                    PRhiSamplerAddressMode.CLAMP_TO_EDGE, PRhiSamplerAddressMode.CLAMP_TO_EDGE,
+                    PRhiSamplerAddressMode.CLAMP_TO_EDGE, 0.0f));
             descriptor = renderResources.createTextureDescriptor(view, sampler);
             renderResources.registerTextureDescriptor(texture, descriptor, runtime.device().contextIdentity());
             return new BorrowedTexture(minecraftView, texture, view, sampler, descriptor, renderResources);
@@ -223,14 +223,14 @@ final class MinecraftUiResources2612 implements UiResourceResolver, AutoCloseabl
     private static final class BorrowedTexture implements AutoCloseable {
         private final GlTextureView minecraftView;
         private final Render2DTexture texture;
-        private final RhiImageView view;
-        private final RhiSampler sampler;
-        private final RhiDescriptorSet descriptor;
+        private final PRhiImageView view;
+        private final PRhiSampler sampler;
+        private final PRhiDescriptorSet descriptor;
         private final DefaultRenderResources resources;
         private boolean closed;
 
-        private BorrowedTexture(GlTextureView minecraftView, Render2DTexture texture, RhiImageView view,
-                                RhiSampler sampler, RhiDescriptorSet descriptor,
+        private BorrowedTexture(GlTextureView minecraftView, Render2DTexture texture, PRhiImageView view,
+                                PRhiSampler sampler, PRhiDescriptorSet descriptor,
                                 DefaultRenderResources resources) {
             this.minecraftView = minecraftView;
             this.texture = texture;

@@ -7,23 +7,23 @@ import com.github.slmpc.lumingraphics.core.threading.RenderThreadGate;
 import com.github.slmpc.lumingraphics.mc.v2612.bridge.Blaze3DBridge2612;
 import com.github.slmpc.lumingraphics.mc.v2612.bridge.GlStateManagerBridge2612;
 import com.github.slmpc.prismrhi.PrismRHI;
-import com.github.slmpc.prismrhi.backend.RhiBackendProvider;
+import com.github.slmpc.prismrhi.backend.PRhiBackendProvider;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlExternalContext;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlExternalDevice;
 import com.github.slmpc.prismrhi.backend.opengl41.Gl41BackendProvider;
 import com.github.slmpc.prismrhi.backend.opengl46.Gl46BackendProvider;
-import com.github.slmpc.prismrhi.command.RhiCommandBuffer;
-import com.github.slmpc.prismrhi.command.RhiCommandBufferLevel;
-import com.github.slmpc.prismrhi.command.RhiCommandPool;
-import com.github.slmpc.prismrhi.command.RhiCommandPoolCreateInfo;
-import com.github.slmpc.prismrhi.context.RhiContextIdentity;
-import com.github.slmpc.prismrhi.context.RhiInvalidationToken;
-import com.github.slmpc.prismrhi.device.RhiDeviceCreateInfo;
-import com.github.slmpc.prismrhi.instance.RhiInstance;
-import com.github.slmpc.prismrhi.instance.RhiInstanceCreateInfo;
-import com.github.slmpc.prismrhi.queue.RhiQueue;
-import com.github.slmpc.prismrhi.queue.RhiQueueType;
-import com.github.slmpc.prismrhi.queue.RhiSubmitInfo;
+import com.github.slmpc.prismrhi.command.PRhiCommandBuffer;
+import com.github.slmpc.prismrhi.command.PRhiCommandBufferLevel;
+import com.github.slmpc.prismrhi.command.PRhiCommandPool;
+import com.github.slmpc.prismrhi.command.PRhiCommandPoolCreateInfo;
+import com.github.slmpc.prismrhi.context.PRhiContextIdentity;
+import com.github.slmpc.prismrhi.context.PRhiInvalidationToken;
+import com.github.slmpc.prismrhi.device.PRhiDeviceCreateInfo;
+import com.github.slmpc.prismrhi.instance.PRhiInstance;
+import com.github.slmpc.prismrhi.instance.PRhiInstanceCreateInfo;
+import com.github.slmpc.prismrhi.queue.PRhiQueue;
+import com.github.slmpc.prismrhi.queue.PRhiQueueType;
+import com.github.slmpc.prismrhi.queue.PRhiSubmitInfo;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.Locale;
 import java.util.Objects;
@@ -45,11 +45,11 @@ public final class MinecraftGraphicsRuntime2612 implements AutoCloseable {
     }
 
     private final OpenGlExternalContext externalContext;
-    private final RhiInstance instance;
+    private final PRhiInstance instance;
     private final OpenGlExternalDevice device;
-    private final RhiQueue graphicsQueue;
-    private final RhiCommandPool commandPool;
-    private final RhiCommandBuffer commandBuffer;
+    private final PRhiQueue graphicsQueue;
+    private final PRhiCommandPool commandPool;
+    private final PRhiCommandBuffer commandBuffer;
     private final Blaze3DBridge2612 blazeBridge;
     private final MinecraftRenderTargetBridge2612 targetBridge;
     private final LuminGraphicsContext luminContext;
@@ -57,8 +57,8 @@ public final class MinecraftGraphicsRuntime2612 implements AutoCloseable {
     private final RuntimeLifecycle2612 lifecycle;
     private volatile double projectionScale = Double.NaN;
 
-    private MinecraftGraphicsRuntime2612(OpenGlExternalContext context, RhiInstance instance,
-            OpenGlExternalDevice device, RhiQueue queue, RhiCommandPool pool, RhiCommandBuffer buffer,
+    private MinecraftGraphicsRuntime2612(OpenGlExternalContext context, PRhiInstance instance,
+            OpenGlExternalDevice device, PRhiQueue queue, PRhiCommandPool pool, PRhiCommandBuffer buffer,
             Blaze3DBridge2612 bridge, MinecraftRenderTargetBridge2612 targets,
             LuminGraphicsContext luminContext, FrameCoordinator2612 frames) {
         this.externalContext = context;
@@ -86,9 +86,9 @@ public final class MinecraftGraphicsRuntime2612 implements AutoCloseable {
         }
         RenderSystem.assertOnRenderThread();
         var capabilities = GL.getCapabilities();
-        var invalidation = new RhiInvalidationToken();
+        var invalidation = new PRhiInvalidationToken();
         long handle = Integer.toUnsignedLong(System.identityHashCode(capabilities)) + 1L;
-        var identity = new RhiContextIdentity(handle, "minecraft-26.1.2-render-context");
+        var identity = new PRhiContextIdentity(handle, "minecraft-26.1.2-render-context");
         var context = new OpenGlExternalContext(capabilities, Thread.currentThread(), identity, invalidation,
                 expected -> GL.getCapabilities() == capabilities && identity.equals(expected));
         current = create(context, config);
@@ -102,35 +102,35 @@ public final class MinecraftGraphicsRuntime2612 implements AutoCloseable {
     }
 
     private static MinecraftGraphicsRuntime2612 create(OpenGlExternalContext context, CreationConfig config) {
-        RhiInstance instance = null;
+        PRhiInstance instance = null;
         OpenGlExternalDevice device = null;
-        RhiCommandPool pool = null;
-        RhiCommandBuffer buffer = null;
+        PRhiCommandPool pool = null;
+        PRhiCommandBuffer buffer = null;
         MinecraftRenderTargetBridge2612 targets = null;
         LuminGraphicsContext lumin = null;
         try {
             context.requireCurrent();
-            RhiBackendProvider provider = isMacOs()
+            PRhiBackendProvider provider = isMacOs()
                     ? new Gl41BackendProvider(context)
                     : new Gl46BackendProvider(context);
-            instance = PrismRHI.createInstance(provider, RhiInstanceCreateInfo.builder()
+            instance = PrismRHI.createInstance(provider, PRhiInstanceCreateInfo.builder()
                     .applicationName("LuminGraphics-MC 26.1.2").build());
             device = (OpenGlExternalDevice) instance.createDevice(instance.enumeratePhysicalDevices().getFirst(),
-                    RhiDeviceCreateInfo.builder().debugName("minecraft-26.1.2")
+                    PRhiDeviceCreateInfo.builder().debugName("minecraft-26.1.2")
                             .glStateBridge(GlStateManagerBridge2612.INSTANCE).build());
-            RhiQueue queue = device.queue(RhiQueueType.GRAPHICS);
-            pool = device.createCommandPool(new RhiCommandPoolCreateInfo(RhiQueueType.GRAPHICS, true, true));
-            buffer = pool.allocateCommandBuffer(RhiCommandBufferLevel.PRIMARY);
+            PRhiQueue queue = device.queue(PRhiQueueType.GRAPHICS);
+            pool = device.createCommandPool(new PRhiCommandPoolCreateInfo(PRhiQueueType.GRAPHICS, true, true));
+            buffer = pool.allocateCommandBuffer(PRhiCommandBufferLevel.PRIMARY);
             Blaze3DBridge2612 bridge = new Blaze3DBridge2612(device);
             targets = new MinecraftRenderTargetBridge2612(bridge, device.contextIdentity(), config.renderTargetSupplier());
-            RhiCommandBuffer ownedBuffer = buffer;
+            PRhiCommandBuffer ownedBuffer = buffer;
             MinecraftRenderTargetBridge2612 ownedTargets = targets;
             FrameCoordinator2612 frames = new FrameCoordinator2612(new FrameCoordinator2612.Driver() {
                 @Override public FrameCoordinator2612.TargetLease acquireTarget() { return ownedTargets.acquire(); }
                 @Override public void resetCommandBuffer() { ownedBuffer.reset(); }
                 @Override public void beginCommandBuffer() { ownedBuffer.begin(); }
                 @Override public void endCommandBuffer() { ownedBuffer.end(); }
-                @Override public void submitCommandBuffer() { queue.submit(RhiSubmitInfo.of(ownedBuffer)); }
+                @Override public void submitCommandBuffer() { queue.submit(PRhiSubmitInfo.of(ownedBuffer)); }
             });
             lumin = new LuminGraphicsContext(device,
                     new RenderThreadGate(context.ownerThread(), config.renderExecutor()), config.metricsSupplier(),
@@ -146,11 +146,11 @@ public final class MinecraftGraphicsRuntime2612 implements AutoCloseable {
     }
 
     public OpenGlExternalContext externalContext() { requireAccess(); return externalContext; }
-    public RhiInstance instance() { requireAccess(); return instance; }
+    public PRhiInstance instance() { requireAccess(); return instance; }
     public OpenGlExternalDevice device() { requireAccess(); return device; }
-    public RhiQueue graphicsQueue() { requireAccess(); return graphicsQueue; }
-    public RhiCommandPool commandPool() { requireAccess(); return commandPool; }
-    public RhiCommandBuffer commandBuffer() {
+    public PRhiQueue graphicsQueue() { requireAccess(); return graphicsQueue; }
+    public PRhiCommandPool commandPool() { requireAccess(); return commandPool; }
+    public PRhiCommandBuffer commandBuffer() {
         requireAccess();
         if (!frames.frameActive()) throw new IllegalStateException("No graphics frame is active");
         return commandBuffer;

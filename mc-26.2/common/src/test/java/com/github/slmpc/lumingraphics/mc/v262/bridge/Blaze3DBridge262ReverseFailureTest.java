@@ -15,7 +15,7 @@ import com.github.slmpc.lumingraphics.mc.bridge.BridgeResult;
 import com.github.slmpc.lumingraphics.mc.bridge.BridgeUnsupportedReason;
 import com.github.slmpc.lumingraphics.mc.bridge.BridgeWrongContextException;
 import com.github.slmpc.lumingraphics.mc.v262.access.GlObjectFactory262;
-import com.github.slmpc.prismrhi.RhiResourceClosedException;
+import com.github.slmpc.prismrhi.PRhiResourceClosedException;
 import com.github.slmpc.prismrhi.backend.BackendApi;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlAdoptedResource;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlBufferAdoption;
@@ -26,37 +26,37 @@ import com.github.slmpc.prismrhi.backend.opengl.OpenGlImageViewAdoption;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlNativeObjectTypes;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlPipelineAdoption;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlSamplerAdoption;
-import com.github.slmpc.prismrhi.command.RhiCommandPool;
-import com.github.slmpc.prismrhi.command.RhiCommandPoolCreateInfo;
-import com.github.slmpc.prismrhi.context.RhiContextIdentity;
-import com.github.slmpc.prismrhi.context.RhiInvalidationToken;
-import com.github.slmpc.prismrhi.descriptor.RhiDescriptorSet;
-import com.github.slmpc.prismrhi.descriptor.RhiDescriptorSetAllocateInfo;
-import com.github.slmpc.prismrhi.descriptor.RhiDescriptorSetLayout;
-import com.github.slmpc.prismrhi.descriptor.RhiDescriptorSetLayoutCreateInfo;
-import com.github.slmpc.prismrhi.format.RhiExtent3D;
-import com.github.slmpc.prismrhi.format.RhiFormat;
-import com.github.slmpc.prismrhi.pipeline.RhiGraphicsPipeline;
-import com.github.slmpc.prismrhi.pipeline.RhiGraphicsPipelineCreateInfo;
-import com.github.slmpc.prismrhi.queue.RhiQueue;
-import com.github.slmpc.prismrhi.queue.RhiQueueType;
-import com.github.slmpc.prismrhi.resource.RhiBuffer;
-import com.github.slmpc.prismrhi.resource.RhiBufferCreateInfo;
-import com.github.slmpc.prismrhi.resource.RhiImage;
-import com.github.slmpc.prismrhi.resource.RhiImageAspect;
-import com.github.slmpc.prismrhi.resource.RhiImageCreateInfo;
-import com.github.slmpc.prismrhi.resource.RhiImageView;
-import com.github.slmpc.prismrhi.resource.RhiImageViewCreateInfo;
-import com.github.slmpc.prismrhi.resource.RhiNativeObject;
-import com.github.slmpc.prismrhi.resource.RhiNativeObjectType;
-import com.github.slmpc.prismrhi.resource.RhiOwnership;
-import com.github.slmpc.prismrhi.resource.RhiSampler;
-import com.github.slmpc.prismrhi.resource.RhiSamplerCreateInfo;
-import com.github.slmpc.prismrhi.shader.RhiShader;
-import com.github.slmpc.prismrhi.shader.RhiShaderBinary;
-import com.github.slmpc.prismrhi.shader.RhiShaderBinaryFormat;
-import com.github.slmpc.prismrhi.shader.RhiShaderDesc;
-import com.github.slmpc.prismrhi.shader.RhiShaderStage;
+import com.github.slmpc.prismrhi.command.PRhiCommandPool;
+import com.github.slmpc.prismrhi.command.PRhiCommandPoolCreateInfo;
+import com.github.slmpc.prismrhi.context.PRhiContextIdentity;
+import com.github.slmpc.prismrhi.context.PRhiInvalidationToken;
+import com.github.slmpc.prismrhi.descriptor.PRhiDescriptorSet;
+import com.github.slmpc.prismrhi.descriptor.PRhiDescriptorSetAllocateInfo;
+import com.github.slmpc.prismrhi.descriptor.PRhiDescriptorSetLayout;
+import com.github.slmpc.prismrhi.descriptor.PRhiDescriptorSetLayoutCreateInfo;
+import com.github.slmpc.prismrhi.format.PRhiExtent3D;
+import com.github.slmpc.prismrhi.format.PRhiFormat;
+import com.github.slmpc.prismrhi.pipeline.PRhiGraphicsPipeline;
+import com.github.slmpc.prismrhi.pipeline.PRhiGraphicsPipelineCreateInfo;
+import com.github.slmpc.prismrhi.queue.PRhiQueue;
+import com.github.slmpc.prismrhi.queue.PRhiQueueType;
+import com.github.slmpc.prismrhi.resource.PRhiBuffer;
+import com.github.slmpc.prismrhi.resource.PRhiBufferCreateInfo;
+import com.github.slmpc.prismrhi.resource.PRhiImage;
+import com.github.slmpc.prismrhi.resource.PRhiImageAspect;
+import com.github.slmpc.prismrhi.resource.PRhiImageCreateInfo;
+import com.github.slmpc.prismrhi.resource.PRhiImageView;
+import com.github.slmpc.prismrhi.resource.PRhiImageViewCreateInfo;
+import com.github.slmpc.prismrhi.resource.PRhiNativeObject;
+import com.github.slmpc.prismrhi.resource.PRhiNativeObjectType;
+import com.github.slmpc.prismrhi.resource.PRhiOwnership;
+import com.github.slmpc.prismrhi.resource.PRhiSampler;
+import com.github.slmpc.prismrhi.resource.PRhiSamplerCreateInfo;
+import com.github.slmpc.prismrhi.shader.PRhiShader;
+import com.github.slmpc.prismrhi.shader.PRhiShaderBinary;
+import com.github.slmpc.prismrhi.shader.PRhiShaderBinaryFormat;
+import com.github.slmpc.prismrhi.shader.PRhiShaderDesc;
+import com.github.slmpc.prismrhi.shader.PRhiShaderStage;
 import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.opengl.DirectStateAccess;
 import com.mojang.blaze3d.opengl.FrameBufferCache;
@@ -78,7 +78,7 @@ class Blaze3DBridge262ReverseFailureTest {
     @Test void textureHandleOverflowIsTyped() {
         Fixture fixture = new Fixture(new ThrowingFactory());
         BridgeResult<?> result = fixture.bridge.textureToMinecraft(
-                new Image(Long.MAX_VALUE), fixture.capability("texture", "RhiImage", Long.MAX_VALUE),
+                new Image(Long.MAX_VALUE), fixture.capability("texture", "PRhiImage", Long.MAX_VALUE),
                 new Blaze3DBridge262.TextureMetadata262(4, "overflow", 1), new FrameBufferCache());
         assertUnsupported(result, BridgeUnsupportedReason.NO_NATIVE_HANDLE);
     }
@@ -86,7 +86,7 @@ class Blaze3DBridge262ReverseFailureTest {
     @Test void textureFactoryFailureIsTyped() {
         Fixture fixture = new Fixture(new ThrowingFactory());
         BridgeResult<?> result = fixture.bridge.textureToMinecraft(
-                new Image(7), fixture.capability("texture", "RhiImage", 7),
+                new Image(7), fixture.capability("texture", "PRhiImage", 7),
                 new Blaze3DBridge262.TextureMetadata262(4, "factory", 1), new FrameBufferCache());
         assertUnsupported(result, BridgeUnsupportedReason.MC_SHAPE_CHANGED);
     }
@@ -94,14 +94,14 @@ class Blaze3DBridge262ReverseFailureTest {
     @Test void bufferFactoryFailureIsTyped() {
         Fixture fixture = new Fixture(new ThrowingFactory());
         BridgeResult<?> result = fixture.bridge.bufferToMinecraft(
-                new Buffer(11), fixture.capability("buffer", "RhiBuffer", 11), 32, null, false);
+                new Buffer(11), fixture.capability("buffer", "PRhiBuffer", 11), 32, null, false);
         assertUnsupported(result, BridgeUnsupportedReason.MC_SHAPE_CHANGED);
     }
 
     @Test void bufferHandleOverflowIsTyped() {
         Fixture fixture = new Fixture(new ThrowingFactory());
         BridgeResult<?> result = fixture.bridge.bufferToMinecraft(
-                new Buffer(Long.MAX_VALUE), fixture.capability("buffer", "RhiBuffer", Long.MAX_VALUE),
+                new Buffer(Long.MAX_VALUE), fixture.capability("buffer", "PRhiBuffer", Long.MAX_VALUE),
                 32, null, false);
         assertUnsupported(result, BridgeUnsupportedReason.NO_NATIVE_HANDLE);
     }
@@ -109,7 +109,7 @@ class Blaze3DBridge262ReverseFailureTest {
     @Test void shaderFactoryFailureIsTyped() {
         Fixture fixture = new Fixture(new ThrowingFactory());
         BridgeResult<?> result = fixture.bridge.shaderToMinecraft(
-                new Shader(13), fixture.capability("shader-module", "RhiShader", 13),
+                new Shader(13), fixture.capability("shader-module", "PRhiShader", 13),
                 Identifier.withDefaultNamespace("test"));
         assertUnsupported(result, BridgeUnsupportedReason.MC_SHAPE_CHANGED);
     }
@@ -117,7 +117,7 @@ class Blaze3DBridge262ReverseFailureTest {
     @Test void shaderHandleOverflowIsTyped() {
         Fixture fixture = new Fixture(new ThrowingFactory());
         BridgeResult<?> result = fixture.bridge.shaderToMinecraft(
-                new Shader(Long.MAX_VALUE), fixture.capability("shader-module", "RhiShader", Long.MAX_VALUE),
+                new Shader(Long.MAX_VALUE), fixture.capability("shader-module", "PRhiShader", Long.MAX_VALUE),
                 Identifier.withDefaultNamespace("overflow"));
         assertUnsupported(result, BridgeUnsupportedReason.NO_NATIVE_HANDLE);
     }
@@ -126,7 +126,7 @@ class Blaze3DBridge262ReverseFailureTest {
         Fixture fixture = new Fixture(new ThrowingFactory());
         GlTexture parent = new TestTexture();
         BridgeResult<?> result = fixture.bridge.textureViewToMinecraft(fixture.view(3),
-                fixture.capability("texture", "RhiImageView", 3), parent, 0, 1, new FrameBufferCache());
+                fixture.capability("texture", "PRhiImageView", 3), parent, 0, 1, new FrameBufferCache());
         assertUnsupported(result, BridgeUnsupportedReason.MC_SHAPE_CHANGED);
     }
 
@@ -136,11 +136,11 @@ class Blaze3DBridge262ReverseFailureTest {
         RecordingFactory factory = new RecordingFactory(factoryView);
         Fixture fixture = new Fixture(factory);
         ViewImage backingImage = fixture.image(3);
-        RhiImageView source = new View(backingImage);
+        PRhiImageView source = new View(backingImage);
         FrameBufferCache frameBufferCache = new FrameBufferCache();
 
         BridgeResult<BridgeLease<GlTextureView>> result = fixture.bridge.textureViewToMinecraft(source,
-                fixture.capability("texture", "RhiImageView", 3), parent, 0, 1, frameBufferCache);
+                fixture.capability("texture", "PRhiImageView", 3), parent, 0, 1, frameBufferCache);
 
         assertInstanceOf(BridgeResult.Success.class, result);
         BridgeLease<GlTextureView> lease = result.orElseThrow();
@@ -162,7 +162,7 @@ class Blaze3DBridge262ReverseFailureTest {
     @Test void nullTextureViewIsTyped() {
         Fixture fixture = new Fixture(new ThrowingFactory());
         BridgeResult<?> result = fixture.bridge.textureViewToMinecraft(null,
-                fixture.capability("texture", "RhiImageView", 3), new TestTexture(), 0, 1,
+                fixture.capability("texture", "PRhiImageView", 3), new TestTexture(), 0, 1,
                 new FrameBufferCache());
         assertUnsupported(result, BridgeUnsupportedReason.TYPE_MISMATCH);
     }
@@ -172,18 +172,18 @@ class Blaze3DBridge262ReverseFailureTest {
         ViewImage image = fixture.image(3);
         image.close();
         BridgeResult<?> result = fixture.bridge.textureViewToMinecraft(new View(image),
-                fixture.capability("texture", "RhiImageView", 3), new TestTexture(), 0, 1,
+                fixture.capability("texture", "PRhiImageView", 3), new TestTexture(), 0, 1,
                 new FrameBufferCache());
         assertUnsupported(result, BridgeUnsupportedReason.CLOSED);
     }
 
     @Test void staleTextureViewTokenIsTyped() {
         Fixture fixture = new Fixture(new ThrowingFactory());
-        RhiInvalidationToken staleToken = new RhiInvalidationToken();
+        PRhiInvalidationToken staleToken = new PRhiInvalidationToken();
         staleToken.invalidate();
         BridgeResult<?> result = fixture.bridge.textureViewToMinecraft(
                 new View(new ViewImage(3, fixture.rhiContext, staleToken, OpenGlNativeObjectTypes.TEXTURE)),
-                fixture.capability("texture", "RhiImageView", 3), new TestTexture(), 0, 1,
+                fixture.capability("texture", "PRhiImageView", 3), new TestTexture(), 0, 1,
                 new FrameBufferCache());
         assertUnsupported(result, BridgeUnsupportedReason.TOKEN_INVALIDATED);
     }
@@ -191,9 +191,9 @@ class Blaze3DBridge262ReverseFailureTest {
     @Test void wrongTextureViewContextIsTyped() {
         Fixture fixture = new Fixture(new ThrowingFactory());
         BridgeResult<?> result = fixture.bridge.textureViewToMinecraft(
-                new View(new ViewImage(3, new RhiContextIdentity(99, "other"), fixture.rhiToken,
+                new View(new ViewImage(3, new PRhiContextIdentity(99, "other"), fixture.rhiToken,
                         OpenGlNativeObjectTypes.TEXTURE)),
-                fixture.capability("texture", "RhiImageView", 3), new TestTexture(), 0, 1,
+                fixture.capability("texture", "PRhiImageView", 3), new TestTexture(), 0, 1,
                 new FrameBufferCache());
         assertUnsupported(result, BridgeUnsupportedReason.CONTEXT_MISMATCH);
     }
@@ -202,7 +202,7 @@ class Blaze3DBridge262ReverseFailureTest {
         Fixture fixture = new Fixture(new ThrowingFactory());
         BridgeResult<?> result = fixture.bridge.textureViewToMinecraft(
                 new View(new ViewImage(3, fixture.rhiContext, fixture.rhiToken, OpenGlNativeObjectTypes.BUFFER)),
-                fixture.capability("texture", "RhiImageView", 3), new TestTexture(), 0, 1,
+                fixture.capability("texture", "PRhiImageView", 3), new TestTexture(), 0, 1,
                 new FrameBufferCache());
         assertUnsupported(result, BridgeUnsupportedReason.TYPE_MISMATCH);
     }
@@ -210,7 +210,7 @@ class Blaze3DBridge262ReverseFailureTest {
     @Test void textureViewMustMatchMinecraftParentHandle() {
         Fixture fixture = new Fixture(new ThrowingFactory());
         BridgeResult<?> result = fixture.bridge.textureViewToMinecraft(fixture.view(4),
-                fixture.capability("texture", "RhiImageView", 4), new TestTexture(), 0, 1,
+                fixture.capability("texture", "PRhiImageView", 4), new TestTexture(), 0, 1,
                 new FrameBufferCache());
         assertUnsupported(result, BridgeUnsupportedReason.VIEW_REQUIRES_PARENT);
     }
@@ -296,8 +296,8 @@ class Blaze3DBridge262ReverseFailureTest {
     private static final class Fixture {
         private final BridgeContextIdentity bridgeContext = BridgeContextIdentity.create("reverse-failure");
         private final Object capabilities = new Object();
-        private final RhiContextIdentity rhiContext = new RhiContextIdentity(41, "reverse-failure");
-        private final RhiInvalidationToken rhiToken = new RhiInvalidationToken();
+        private final PRhiContextIdentity rhiContext = new PRhiContextIdentity(41, "reverse-failure");
+        private final PRhiInvalidationToken rhiToken = new PRhiInvalidationToken();
         private BridgeContextIdentity currentBridgeContext = bridgeContext;
         private Object currentGlCapabilities = capabilities;
         private final Blaze3DBridge262 bridge;
@@ -306,7 +306,7 @@ class Blaze3DBridge262ReverseFailureTest {
             this(factory, null, null);
         }
 
-        private Fixture(GlObjectFactory262 factory, RhiImage adoptedImage, RhiImageView adoptedView) {
+        private Fixture(GlObjectFactory262 factory, PRhiImage adoptedImage, PRhiImageView adoptedView) {
             bridge = new Blaze3DBridge262(new Device(rhiContext, adoptedImage, adoptedView), bridgeContext,
                     bridgeContext.newInvalidationToken(), rhiContext, rhiToken,
                     capabilities, () -> currentGlCapabilities, () -> currentBridgeContext, factory);
@@ -316,7 +316,7 @@ class Blaze3DBridge262ReverseFailureTest {
             return new ViewImage(handle, rhiContext, rhiToken, OpenGlNativeObjectTypes.TEXTURE);
         }
 
-        private RhiImageView view(long handle) {
+        private PRhiImageView view(long handle) {
             return new View(image(handle));
         }
 
@@ -360,27 +360,27 @@ class Blaze3DBridge262ReverseFailureTest {
         }
     }
 
-    private static final class Image implements RhiImage {
+    private static final class Image implements PRhiImage {
         private final long handle;
         private Image(long handle) { this.handle = handle; }
         @Override public BackendApi api() { return BackendApi.OPENGL_46; }
-        @Override public RhiExtent3D extent() { return new RhiExtent3D(4, 4, 1); }
-        @Override public RhiFormat format() { return RhiFormat.RGBA8_UNORM; }
-        @Override public Optional<RhiNativeObject> getNativeObject(RhiNativeObjectType type) {
-            return Optional.of(new RhiNativeObject(OpenGlNativeObjectTypes.TEXTURE, handle));
+        @Override public PRhiExtent3D extent() { return new PRhiExtent3D(4, 4, 1); }
+        @Override public PRhiFormat format() { return PRhiFormat.RGBA8_UNORM; }
+        @Override public Optional<PRhiNativeObject> getNativeObject(PRhiNativeObjectType type) {
+            return Optional.of(new PRhiNativeObject(OpenGlNativeObjectTypes.TEXTURE, handle));
         }
         @Override public void close() { }
     }
 
-    private static final class ViewImage implements RhiImage, OpenGlAdoptedResource {
+    private static final class ViewImage implements PRhiImage, OpenGlAdoptedResource {
         private final long handle;
-        private final RhiContextIdentity context;
-        private final RhiInvalidationToken token;
-        private final RhiNativeObjectType nativeType;
+        private final PRhiContextIdentity context;
+        private final PRhiInvalidationToken token;
+        private final PRhiNativeObjectType nativeType;
         private boolean closed;
 
-        private ViewImage(long handle, RhiContextIdentity context, RhiInvalidationToken token,
-                RhiNativeObjectType nativeType) {
+        private ViewImage(long handle, PRhiContextIdentity context, PRhiInvalidationToken token,
+                PRhiNativeObjectType nativeType) {
             this.handle = handle;
             this.context = context;
             this.token = token;
@@ -388,24 +388,24 @@ class Blaze3DBridge262ReverseFailureTest {
         }
 
         @Override public BackendApi api() { return BackendApi.OPENGL_46; }
-        @Override public RhiExtent3D extent() { return new RhiExtent3D(4, 4, 1); }
-        @Override public RhiFormat format() { return RhiFormat.RGBA8_UNORM; }
-        @Override public RhiOwnership ownership() { return RhiOwnership.BORROWED; }
-        @Override public RhiContextIdentity contextIdentity() { return context; }
-        @Override public RhiInvalidationToken invalidationToken() { return token; }
-        @Override public Optional<RhiNativeObject> getNativeObject(RhiNativeObjectType type) {
-            if (closed) throw new RhiResourceClosedException("injected closed view image");
+        @Override public PRhiExtent3D extent() { return new PRhiExtent3D(4, 4, 1); }
+        @Override public PRhiFormat format() { return PRhiFormat.RGBA8_UNORM; }
+        @Override public PRhiOwnership ownership() { return PRhiOwnership.BORROWED; }
+        @Override public PRhiContextIdentity contextIdentity() { return context; }
+        @Override public PRhiInvalidationToken invalidationToken() { return token; }
+        @Override public Optional<PRhiNativeObject> getNativeObject(PRhiNativeObjectType type) {
+            if (closed) throw new PRhiResourceClosedException("injected closed view image");
             token.requireValid();
-            return Optional.of(new RhiNativeObject(nativeType, handle));
+            return Optional.of(new PRhiNativeObject(nativeType, handle));
         }
         @Override public void close() { closed = true; }
         private boolean isClosed() { return closed; }
     }
 
-    private record View(RhiImage image) implements RhiImageView {
+    private record View(PRhiImage image) implements PRhiImageView {
         @Override public BackendApi api() { return image.api(); }
-        @Override public RhiFormat format() { return image.format(); }
-        @Override public Set<RhiImageAspect> aspects() { return Set.of(RhiImageAspect.COLOR); }
+        @Override public PRhiFormat format() { return image.format(); }
+        @Override public Set<PRhiImageAspect> aspects() { return Set.of(PRhiImageAspect.COLOR); }
         @Override public void close() { }
     }
 
@@ -421,83 +421,83 @@ class Blaze3DBridge262ReverseFailureTest {
         }
     }
 
-    private static final class TrackingImage implements RhiImage {
+    private static final class TrackingImage implements PRhiImage {
         private final List<String> closes;
         private TrackingImage(List<String> closes) { this.closes = closes; }
         @Override public BackendApi api() { return BackendApi.OPENGL_46; }
-        @Override public RhiExtent3D extent() { return new RhiExtent3D(4, 4, 1); }
-        @Override public RhiFormat format() { return RhiFormat.RGBA8_UNORM; }
+        @Override public PRhiExtent3D extent() { return new PRhiExtent3D(4, 4, 1); }
+        @Override public PRhiFormat format() { return PRhiFormat.RGBA8_UNORM; }
         @Override public void close() { closes.add("image"); }
     }
 
-    private record TrackingView(RhiImage image, List<String> closes) implements RhiImageView {
+    private record TrackingView(PRhiImage image, List<String> closes) implements PRhiImageView {
         @Override public BackendApi api() { return image.api(); }
-        @Override public RhiFormat format() { return image.format(); }
-        @Override public Set<RhiImageAspect> aspects() { return Set.of(RhiImageAspect.COLOR); }
+        @Override public PRhiFormat format() { return image.format(); }
+        @Override public Set<PRhiImageAspect> aspects() { return Set.of(PRhiImageAspect.COLOR); }
         @Override public void close() { closes.add("view"); }
     }
 
-    private static final class Buffer implements RhiBuffer {
+    private static final class Buffer implements PRhiBuffer {
         private final long handle;
         private Buffer(long handle) { this.handle = handle; }
         @Override public BackendApi api() { return BackendApi.OPENGL_46; }
         @Override public long size() { return 64; }
-        @Override public Optional<RhiNativeObject> getNativeObject(RhiNativeObjectType type) {
-            return Optional.of(new RhiNativeObject(OpenGlNativeObjectTypes.BUFFER, handle));
+        @Override public Optional<PRhiNativeObject> getNativeObject(PRhiNativeObjectType type) {
+            return Optional.of(new PRhiNativeObject(OpenGlNativeObjectTypes.BUFFER, handle));
         }
         @Override public void close() { }
     }
 
-    private static final class Shader implements RhiShader {
+    private static final class Shader implements PRhiShader {
         private final long handle;
         private Shader(long handle) { this.handle = handle; }
         @Override public BackendApi api() { return BackendApi.OPENGL_46; }
-        @Override public RhiShaderDesc desc() { return new RhiShaderDesc(RhiShaderStage.VERTEX, "main", "test"); }
-        @Override public Optional<RhiShaderBinary> binary() { return Optional.empty(); }
-        @Override public RhiOwnership ownership() { return RhiOwnership.BORROWED; }
-        @Override public RhiContextIdentity contextIdentity() { return new RhiContextIdentity(41, "reverse-failure"); }
-        @Override public Optional<RhiInvalidationToken> invalidationToken() { return Optional.empty(); }
-        @Override public Optional<RhiNativeObject> getNativeObject(RhiNativeObjectType type) {
-            return Optional.of(new RhiNativeObject(com.github.slmpc.prismrhi.shader.RhiShaderNativeObjectTypes.OPENGL_SHADER_OBJECT, handle));
+        @Override public PRhiShaderDesc desc() { return new PRhiShaderDesc(PRhiShaderStage.VERTEX, "main", "test"); }
+        @Override public Optional<PRhiShaderBinary> binary() { return Optional.empty(); }
+        @Override public PRhiOwnership ownership() { return PRhiOwnership.BORROWED; }
+        @Override public PRhiContextIdentity contextIdentity() { return new PRhiContextIdentity(41, "reverse-failure"); }
+        @Override public Optional<PRhiInvalidationToken> invalidationToken() { return Optional.empty(); }
+        @Override public Optional<PRhiNativeObject> getNativeObject(PRhiNativeObjectType type) {
+            return Optional.of(new PRhiNativeObject(com.github.slmpc.prismrhi.shader.PRhiShaderNativeObjectTypes.OPENGL_SHADER_OBJECT, handle));
         }
         @Override public void close() { }
     }
 
     private static final class Device implements OpenGlExternalDevice {
-        private final RhiContextIdentity context;
-        private final RhiImage adoptedImage;
-        private final RhiImageView adoptedView;
-        private Device(RhiContextIdentity context, RhiImage adoptedImage, RhiImageView adoptedView) {
+        private final PRhiContextIdentity context;
+        private final PRhiImage adoptedImage;
+        private final PRhiImageView adoptedView;
+        private Device(PRhiContextIdentity context, PRhiImage adoptedImage, PRhiImageView adoptedView) {
             this.context = context;
             this.adoptedImage = adoptedImage;
             this.adoptedView = adoptedView;
         }
         @Override public BackendApi api() { return BackendApi.OPENGL_46; }
-        @Override public RhiContextIdentity contextIdentity() { return context; }
+        @Override public PRhiContextIdentity contextIdentity() { return context; }
         @Override public OpenGlExternalContext externalContext() { return null; }
-        @Override public RhiQueue queue(RhiQueueType type) { throw unsupported(); }
-        @Override public RhiBuffer createBuffer(RhiBufferCreateInfo info) { throw unsupported(); }
-        @Override public RhiImage createImage(RhiImageCreateInfo info) { throw unsupported(); }
-        @Override public RhiImageView createImageView(RhiImageViewCreateInfo info) { throw unsupported(); }
-        @Override public RhiSampler createSampler(RhiSamplerCreateInfo info) { throw unsupported(); }
-        @Override public RhiShader createShader(RhiShaderDesc desc, RhiShaderBinaryFormat format, ByteBuffer bytes) { throw unsupported(); }
-        @Override public RhiShader adoptShader(RhiShaderDesc desc, RhiNativeObject object, RhiOwnership ownership,
-                RhiContextIdentity context, RhiInvalidationToken token) { throw unsupported(); }
-        @Override public RhiCommandPool createCommandPool(RhiCommandPoolCreateInfo info) { throw unsupported(); }
-        @Override public RhiDescriptorSetLayout createDescriptorSetLayout(RhiDescriptorSetLayoutCreateInfo info) { throw unsupported(); }
-        @Override public RhiDescriptorSet allocateDescriptorSet(RhiDescriptorSetAllocateInfo info) { throw unsupported(); }
-        @Override public RhiGraphicsPipeline createGraphicsPipeline(RhiGraphicsPipelineCreateInfo info) { throw unsupported(); }
-        @Override public RhiBuffer adoptBuffer(OpenGlBufferAdoption adoption) { throw unsupported(); }
-        @Override public RhiImage adoptImage(OpenGlImageAdoption adoption) {
+        @Override public PRhiQueue queue(PRhiQueueType type) { throw unsupported(); }
+        @Override public PRhiBuffer createBuffer(PRhiBufferCreateInfo info) { throw unsupported(); }
+        @Override public PRhiImage createImage(PRhiImageCreateInfo info) { throw unsupported(); }
+        @Override public PRhiImageView createImageView(PRhiImageViewCreateInfo info) { throw unsupported(); }
+        @Override public PRhiSampler createSampler(PRhiSamplerCreateInfo info) { throw unsupported(); }
+        @Override public PRhiShader createShader(PRhiShaderDesc desc, PRhiShaderBinaryFormat format, ByteBuffer bytes) { throw unsupported(); }
+        @Override public PRhiShader adoptShader(PRhiShaderDesc desc, PRhiNativeObject object, PRhiOwnership ownership,
+                PRhiContextIdentity context, PRhiInvalidationToken token) { throw unsupported(); }
+        @Override public PRhiCommandPool createCommandPool(PRhiCommandPoolCreateInfo info) { throw unsupported(); }
+        @Override public PRhiDescriptorSetLayout createDescriptorSetLayout(PRhiDescriptorSetLayoutCreateInfo info) { throw unsupported(); }
+        @Override public PRhiDescriptorSet allocateDescriptorSet(PRhiDescriptorSetAllocateInfo info) { throw unsupported(); }
+        @Override public PRhiGraphicsPipeline createGraphicsPipeline(PRhiGraphicsPipelineCreateInfo info) { throw unsupported(); }
+        @Override public PRhiBuffer adoptBuffer(OpenGlBufferAdoption adoption) { throw unsupported(); }
+        @Override public PRhiImage adoptImage(OpenGlImageAdoption adoption) {
             if (adoptedImage == null) throw unsupported();
             return adoptedImage;
         }
-        @Override public RhiImageView adoptImageView(OpenGlImageViewAdoption adoption) {
+        @Override public PRhiImageView adoptImageView(OpenGlImageViewAdoption adoption) {
             if (adoptedView == null) throw unsupported();
             return adoptedView;
         }
-        @Override public RhiSampler adoptSampler(OpenGlSamplerAdoption adoption) { throw unsupported(); }
-        @Override public RhiGraphicsPipeline adoptPipeline(OpenGlPipelineAdoption adoption) { throw unsupported(); }
+        @Override public PRhiSampler adoptSampler(OpenGlSamplerAdoption adoption) { throw unsupported(); }
+        @Override public PRhiGraphicsPipeline adoptPipeline(OpenGlPipelineAdoption adoption) { throw unsupported(); }
         @Override public void waitIdle() { }
         @Override public void close() { }
         private static UnsupportedOperationException unsupported() { return new UnsupportedOperationException("unused"); }

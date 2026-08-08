@@ -12,26 +12,26 @@ import com.github.slmpc.prismrhi.backend.opengl.OpenGlImageAdoption;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlImageViewAdoption;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlNativeObjectTypes;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlShaderAdoption;
-import com.github.slmpc.prismrhi.format.RhiExtent3D;
-import com.github.slmpc.prismrhi.format.RhiFormat;
-import com.github.slmpc.prismrhi.pipeline.RhiGraphicsPipeline;
-import com.github.slmpc.prismrhi.resource.RhiBuffer;
-import com.github.slmpc.prismrhi.resource.RhiBufferCreateInfo;
-import com.github.slmpc.prismrhi.resource.RhiBufferUsage;
-import com.github.slmpc.prismrhi.resource.RhiImage;
-import com.github.slmpc.prismrhi.resource.RhiImageCreateInfo;
-import com.github.slmpc.prismrhi.resource.RhiImageUsage;
-import com.github.slmpc.prismrhi.resource.RhiMemoryUsage;
-import com.github.slmpc.prismrhi.resource.RhiNativeObject;
-import com.github.slmpc.prismrhi.resource.RhiNativeObjects;
-import com.github.slmpc.prismrhi.resource.RhiOwnership;
-import com.github.slmpc.prismrhi.resource.RhiFilter;
-import com.github.slmpc.prismrhi.resource.RhiSampler;
-import com.github.slmpc.prismrhi.resource.RhiSamplerAddressMode;
-import com.github.slmpc.prismrhi.resource.RhiSamplerCreateInfo;
-import com.github.slmpc.prismrhi.shader.RhiShader;
-import com.github.slmpc.prismrhi.shader.RhiShaderDesc;
-import com.github.slmpc.prismrhi.shader.RhiShaderStage;
+import com.github.slmpc.prismrhi.format.PRhiExtent3D;
+import com.github.slmpc.prismrhi.format.PRhiFormat;
+import com.github.slmpc.prismrhi.pipeline.PRhiGraphicsPipeline;
+import com.github.slmpc.prismrhi.resource.PRhiBuffer;
+import com.github.slmpc.prismrhi.resource.PRhiBufferCreateInfo;
+import com.github.slmpc.prismrhi.resource.PRhiBufferUsage;
+import com.github.slmpc.prismrhi.resource.PRhiImage;
+import com.github.slmpc.prismrhi.resource.PRhiImageCreateInfo;
+import com.github.slmpc.prismrhi.resource.PRhiImageUsage;
+import com.github.slmpc.prismrhi.resource.PRhiMemoryUsage;
+import com.github.slmpc.prismrhi.resource.PRhiNativeObject;
+import com.github.slmpc.prismrhi.resource.PRhiNativeObjects;
+import com.github.slmpc.prismrhi.resource.PRhiOwnership;
+import com.github.slmpc.prismrhi.resource.PRhiFilter;
+import com.github.slmpc.prismrhi.resource.PRhiSampler;
+import com.github.slmpc.prismrhi.resource.PRhiSamplerAddressMode;
+import com.github.slmpc.prismrhi.resource.PRhiSamplerCreateInfo;
+import com.github.slmpc.prismrhi.shader.PRhiShader;
+import com.github.slmpc.prismrhi.shader.PRhiShaderDesc;
+import com.github.slmpc.prismrhi.shader.PRhiShaderStage;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.opengl.GlBuffer;
@@ -59,16 +59,16 @@ import net.minecraft.resources.Identifier;
 public final class Blaze3DBridge2612 {
     private final OpenGlExternalDevice device;
     private final BridgeContext2612 context;
-    private final Function<RhiSamplerCreateInfo, GpuSampler> samplerFactory;
+    private final Function<PRhiSamplerCreateInfo, GpuSampler> samplerFactory;
 
     public Blaze3DBridge2612(OpenGlExternalDevice device) {
         this.device = Objects.requireNonNull(device, "device");
         this.context = new BridgeContext2612() {
             @Override public void requireCurrent() { device.externalContext().requireCurrent(); }
-            @Override public com.github.slmpc.prismrhi.context.RhiContextIdentity identity() {
+            @Override public com.github.slmpc.prismrhi.context.PRhiContextIdentity identity() {
                 return device.externalContext().contextIdentity();
             }
-            @Override public com.github.slmpc.prismrhi.context.RhiInvalidationToken invalidation() {
+            @Override public com.github.slmpc.prismrhi.context.PRhiInvalidationToken invalidation() {
                 return device.externalContext().invalidation();
             }
         };
@@ -76,43 +76,43 @@ public final class Blaze3DBridge2612 {
     }
 
     Blaze3DBridge2612(OpenGlExternalDevice device, BridgeContext2612 context,
-                      Function<RhiSamplerCreateInfo, GpuSampler> samplerFactory) {
+                      Function<PRhiSamplerCreateInfo, GpuSampler> samplerFactory) {
         this.device = Objects.requireNonNull(device, "device");
         this.context = Objects.requireNonNull(context, "context");
         this.samplerFactory = Objects.requireNonNull(samplerFactory, "samplerFactory");
     }
 
-    public BridgeResult<RhiImage> fromBlazeTexture(GpuTexture texture) {
+    public BridgeResult<PRhiImage> fromBlazeTexture(GpuTexture texture) {
         if (!(texture instanceof GlTexture glTexture)) return mismatch("GlTexture", texture);
         if (glTexture.isClosed()) return closed("texture");
         context.requireCurrent();
-        var info = new RhiImageCreateInfo(
-                new RhiExtent3D(glTexture.getWidth(0), glTexture.getHeight(0), glTexture.getDepthOrLayers()),
+        var info = new PRhiImageCreateInfo(
+                new PRhiExtent3D(glTexture.getWidth(0), glTexture.getHeight(0), glTexture.getDepthOrLayers()),
                 toRhiFormat(glTexture.getFormat()), imageUsage(glTexture.usage(), glTexture.getFormat()),
-                RhiMemoryUsage.GPU_ONLY);
+                PRhiMemoryUsage.GPU_ONLY);
         return BridgeResult.success(device.adoptImage(new OpenGlImageAdoption(
-                new RhiNativeObject(OpenGlNativeObjectTypes.TEXTURE, glTexture.glId()), info,
-                RhiOwnership.BORROWED, context.identity(), context.invalidation())));
+                new PRhiNativeObject(OpenGlNativeObjectTypes.TEXTURE, glTexture.glId()), info,
+                PRhiOwnership.BORROWED, context.identity(), context.invalidation())));
     }
 
-    public BridgeResult<com.github.slmpc.prismrhi.resource.RhiImageView> fromBlazeTextureView(GlTextureView view) {
+    public BridgeResult<com.github.slmpc.prismrhi.resource.PRhiImageView> fromBlazeTextureView(GlTextureView view) {
         if (view.isClosed()) return closed("texture-view");
-        BridgeResult<RhiImage> image = fromBlazeTexture(view.texture());
+        BridgeResult<PRhiImage> image = fromBlazeTexture(view.texture());
         if (image.unsupportedDetail().isPresent()) return BridgeResult.unsupported(image.unsupportedDetail().orElseThrow());
-        var createInfo = com.github.slmpc.prismrhi.resource.RhiImageViewCreateInfo.builder(image.orElseThrow())
+        var createInfo = com.github.slmpc.prismrhi.resource.PRhiImageViewCreateInfo.builder(image.orElseThrow())
                 .mipRange(view.baseMipLevel(), view.mipLevels()).build();
         return BridgeResult.success(device.adoptImageView(new OpenGlImageViewAdoption(createInfo)));
     }
 
-    public BridgeResult<GpuTexture> toBlazeTexture(RhiImage image, int mipLevels, String label) {
+    public BridgeResult<GpuTexture> toBlazeTexture(PRhiImage image, int mipLevels, String label) {
         return toBlazeTexture(image, GpuTexture.USAGE_TEXTURE_BINDING, mipLevels, label);
     }
 
-    public BridgeResult<GpuTexture> toBlazeTexture(RhiImage image, int blazeUsage, int mipLevels, String label) {
+    public BridgeResult<GpuTexture> toBlazeTexture(PRhiImage image, int blazeUsage, int mipLevels, String label) {
         BridgeUnsupportedDetail failure = exportFailure(image, "texture");
         if (failure != null) return BridgeResult.unsupported(failure);
         imageUsage(blazeUsage);
-        int handle = checkedHandle(RhiNativeObjects.requireValue(image, OpenGlNativeObjectTypes.TEXTURE));
+        int handle = checkedHandle(PRhiNativeObjects.requireValue(image, OpenGlNativeObjectTypes.TEXTURE));
         GpuTexture texture = new BorrowedGlTexture2612(blazeUsage, label,
                 toBlazeFormat(image.format()), image.extent().width(), image.extent().height(),
                 image.extent().depth(), mipLevels, handle);
@@ -121,7 +121,7 @@ public final class Blaze3DBridge2612 {
     }
 
     public BridgeResult<GlTextureView> toBlazeTextureView(
-            com.github.slmpc.prismrhi.resource.RhiImageView view, int baseMipLevel, int mipLevels, String label) {
+            com.github.slmpc.prismrhi.resource.PRhiImageView view, int baseMipLevel, int mipLevels, String label) {
         BridgeResult<GpuTexture> texture = toBlazeTexture(view.image(), baseMipLevel + mipLevels, label);
         if (texture.unsupportedDetail().isPresent()) return BridgeResult.unsupported(texture.unsupportedDetail().orElseThrow());
         return BridgeResult.success(new BorrowedGlTextureView2612(
@@ -139,44 +139,44 @@ public final class Blaze3DBridge2612 {
         context.requireCurrent();
         int handle = glBuffer instanceof BorrowedGlBuffer2612 borrowed
                 ? borrowed.nativeHandle() : ((GlAccess2612.Buffer) glBuffer).lumin$handle();
-        var info = new RhiBufferCreateInfo(glBuffer.size(), bufferUsage(glBuffer.usage()),
+        var info = new PRhiBufferCreateInfo(glBuffer.size(), bufferUsage(glBuffer.usage()),
                 bufferMemoryUsage(glBuffer.usage()));
-        RhiBuffer adopted = device.adoptBuffer(new OpenGlBufferAdoption(
-                new RhiNativeObject(OpenGlNativeObjectTypes.BUFFER, handle), info, RhiOwnership.BORROWED,
+        PRhiBuffer adopted = device.adoptBuffer(new OpenGlBufferAdoption(
+                new PRhiNativeObject(OpenGlNativeObjectTypes.BUFFER, handle), info, PRhiOwnership.BORROWED,
                 context.identity(), context.invalidation()));
         return BridgeResult.success(new RhiBufferSlice2612(adopted, slice.offset(), slice.length()));
     }
 
-    public BridgeResult<RhiBuffer> fromBlazeBuffer(GpuBuffer buffer) {
+    public BridgeResult<PRhiBuffer> fromBlazeBuffer(GpuBuffer buffer) {
         BridgeResult<RhiBufferSlice2612> result = fromBlazeBuffer(buffer.slice());
         return result.unsupportedDetail().isPresent()
                 ? BridgeResult.unsupported(result.unsupportedDetail().orElseThrow())
                 : BridgeResult.success(result.orElseThrow().buffer());
     }
 
-    public BridgeResult<GpuBuffer> toBlazeBuffer(RhiBuffer buffer, int blazeUsage) {
+    public BridgeResult<GpuBuffer> toBlazeBuffer(PRhiBuffer buffer, int blazeUsage) {
         BridgeUnsupportedDetail failure = exportFailure(buffer, "buffer");
         if (failure != null) return BridgeResult.unsupported(failure);
         bufferUsage(blazeUsage);
-        int handle = checkedHandle(RhiNativeObjects.requireValue(buffer, OpenGlNativeObjectTypes.BUFFER));
+        int handle = checkedHandle(PRhiNativeObjects.requireValue(buffer, OpenGlNativeObjectTypes.BUFFER));
         GlBuffer result = new BorrowedGlBuffer2612(blazeUsage, buffer.size(), handle);
         ((BorrowedBlazeResource2612) result).lumin$markBorrowed(() -> { });
         return BridgeResult.success(result);
     }
 
-    public BridgeResult<RhiShader> fromBlazeShader(GlShaderModule shader) {
+    public BridgeResult<PRhiShader> fromBlazeShader(GlShaderModule shader) {
         if (shader.getShaderId() == -1) return closed("shader-module");
         context.requireCurrent();
         ShaderType type = shader instanceof BorrowedGlShaderModule2612 borrowed
                 ? borrowed.shaderType() : ((GlAccess2612.Shader) shader).lumin$type();
-        RhiShaderStage stage = type == ShaderType.VERTEX ? RhiShaderStage.VERTEX : RhiShaderStage.FRAGMENT;
+        PRhiShaderStage stage = type == ShaderType.VERTEX ? PRhiShaderStage.VERTEX : PRhiShaderStage.FRAGMENT;
         return BridgeResult.success(device.adoptShader(new OpenGlShaderAdoption(
-                new RhiShaderDesc(stage, "main", shader.getDebugLabel()),
-                new RhiNativeObject(OpenGlNativeObjectTypes.SHADER, shader.getShaderId()), RhiOwnership.BORROWED,
+                new PRhiShaderDesc(stage, "main", shader.getDebugLabel()),
+                new PRhiNativeObject(OpenGlNativeObjectTypes.SHADER, shader.getShaderId()), PRhiOwnership.BORROWED,
                 context.identity(), context.invalidation())));
     }
 
-    public BridgeResult<GlShaderModule> toBlazeShader(RhiShader shader) {
+    public BridgeResult<GlShaderModule> toBlazeShader(PRhiShader shader) {
         BridgeUnsupportedDetail failure = exportShaderFailure(shader);
         if (failure != null) return BridgeResult.unsupported(failure);
         ShaderType type = switch (shader.desc().stage()) {
@@ -184,54 +184,54 @@ public final class Blaze3DBridge2612 {
             case FRAGMENT -> ShaderType.FRAGMENT;
             case COMPUTE -> throw new IllegalArgumentException("Minecraft 26.1.2 has no compute shader module");
         };
-        int handle = checkedHandle(RhiNativeObjects.requireValue(shader, OpenGlNativeObjectTypes.SHADER));
+        int handle = checkedHandle(PRhiNativeObjects.requireValue(shader, OpenGlNativeObjectTypes.SHADER));
         GlShaderModule result = new BorrowedGlShaderModule2612(handle,
                 Identifier.fromNamespaceAndPath("lumin_graphics_mc", "borrowed/" + type.getName()), type);
         ((BorrowedBlazeResource2612) result).lumin$markBorrowed(() -> { });
         return BridgeResult.success(result);
     }
 
-    public BridgeResult<RhiSampler> fromBlazeSampler(GpuSampler sampler) {
+    public BridgeResult<PRhiSampler> fromBlazeSampler(GpuSampler sampler) {
         Objects.requireNonNull(sampler, "sampler");
         if (sampler instanceof GlSampler glSampler && glSampler.isClosed()) return closed("sampler");
         context.requireCurrent();
-        return BridgeResult.success(device.createSampler(new RhiSamplerCreateInfo(
-                sampler.getMinFilter() == FilterMode.NEAREST ? RhiFilter.NEAREST : RhiFilter.LINEAR,
-                sampler.getMagFilter() == FilterMode.NEAREST ? RhiFilter.NEAREST : RhiFilter.LINEAR,
+        return BridgeResult.success(device.createSampler(new PRhiSamplerCreateInfo(
+                sampler.getMinFilter() == FilterMode.NEAREST ? PRhiFilter.NEAREST : PRhiFilter.LINEAR,
+                sampler.getMagFilter() == FilterMode.NEAREST ? PRhiFilter.NEAREST : PRhiFilter.LINEAR,
                 toRhiAddress(sampler.getAddressModeU()), toRhiAddress(sampler.getAddressModeV()),
                 toRhiAddress(sampler.getAddressModeV()), sampler.getMaxAnisotropy())));
     }
 
-    public BridgeResult<GpuSampler> toBlazeSampler(RhiSampler sampler, RhiSamplerCreateInfo info) {
+    public BridgeResult<GpuSampler> toBlazeSampler(PRhiSampler sampler, PRhiSamplerCreateInfo info) {
         BridgeUnsupportedDetail failure = exportFailure(sampler, "sampler");
         if (failure != null) return BridgeResult.unsupported(failure);
         Objects.requireNonNull(info, "info");
-        if (info.addressModeU() == RhiSamplerAddressMode.MIRRORED_REPEAT
-                || info.addressModeU() == RhiSamplerAddressMode.CLAMP_TO_BORDER
-                || info.addressModeV() == RhiSamplerAddressMode.MIRRORED_REPEAT
-                || info.addressModeV() == RhiSamplerAddressMode.CLAMP_TO_BORDER) {
+        if (info.addressModeU() == PRhiSamplerAddressMode.MIRRORED_REPEAT
+                || info.addressModeU() == PRhiSamplerAddressMode.CLAMP_TO_BORDER
+                || info.addressModeV() == PRhiSamplerAddressMode.MIRRORED_REPEAT
+                || info.addressModeV() == PRhiSamplerAddressMode.CLAMP_TO_BORDER) {
             return BridgeResult.unsupported(new BridgeUnsupportedDetail.State(
                     BridgeUnsupportedReason.MC_SHAPE_CHANGED, "Minecraft 26.1.2 cannot represent the sampler address mode"));
         }
         return BridgeResult.success(samplerFactory.apply(info));
     }
 
-    public BridgeResult<RhiGraphicsPipeline> rebuildPipeline(
-            RenderPipeline pipeline, Function<RenderPipeline, RhiGraphicsPipeline> rebuilder) {
+    public BridgeResult<PRhiGraphicsPipeline> rebuildPipeline(
+            RenderPipeline pipeline, Function<RenderPipeline, PRhiGraphicsPipeline> rebuilder) {
         context.requireCurrent();
         return BridgeResult.success(Objects.requireNonNull(rebuilder.apply(pipeline), "rebuilt pipeline"));
     }
 
-    public BridgeResult<RhiGraphicsPipeline> rebuildPipeline(
+    public BridgeResult<PRhiGraphicsPipeline> rebuildPipeline(
             RenderPipeline pipeline,
-            BiFunction<RenderPipeline, PipelineMetadata2612, RhiGraphicsPipeline> rebuilder) {
+            BiFunction<RenderPipeline, PipelineMetadata2612, PRhiGraphicsPipeline> rebuilder) {
         context.requireCurrent();
         return BridgeResult.success(Objects.requireNonNull(
                 rebuilder.apply(pipeline, PipelineMetadata2612.from(pipeline)), "rebuilt pipeline"));
     }
 
-    public BridgeResult<RhiGraphicsPipeline> rebuildCompiledPipeline(
-            CompiledRenderPipeline pipeline, Function<GlRenderPipeline, RhiGraphicsPipeline> rebuilder) {
+    public BridgeResult<PRhiGraphicsPipeline> rebuildCompiledPipeline(
+            CompiledRenderPipeline pipeline, Function<GlRenderPipeline, PRhiGraphicsPipeline> rebuilder) {
         if (!(pipeline instanceof GlRenderPipeline glPipeline)) return mismatch("GlRenderPipeline", pipeline);
         if (!glPipeline.isValid()) return closed("compiled-pipeline");
         context.requireCurrent();
@@ -239,7 +239,7 @@ public final class Blaze3DBridge2612 {
     }
 
     public BridgeResult<RenderPipeline> rebuildPipeline(
-            RhiGraphicsPipeline pipeline, Function<RhiGraphicsPipeline, RenderPipeline> rebuilder) {
+            PRhiGraphicsPipeline pipeline, Function<PRhiGraphicsPipeline, RenderPipeline> rebuilder) {
         BridgeUnsupportedDetail failure = exportFailure(pipeline, "pipeline");
         if (failure != null) return BridgeResult.unsupported(failure);
         return BridgeResult.success(Objects.requireNonNull(rebuilder.apply(pipeline), "rebuilt pipeline"));
@@ -277,7 +277,7 @@ public final class Blaze3DBridge2612 {
         return null;
     }
 
-    private BridgeUnsupportedDetail exportShaderFailure(RhiShader shader) {
+    private BridgeUnsupportedDetail exportShaderFailure(PRhiShader shader) {
         if (!shader.contextIdentity().equals(context.identity())) {
             return new BridgeUnsupportedDetail.State(BridgeUnsupportedReason.CONTEXT_MISMATCH,
                     "shader-module belongs to a different OpenGL context");
@@ -310,16 +310,16 @@ public final class Blaze3DBridge2612 {
                 BridgeUnsupportedReason.TYPE_MISMATCH, "class", expected, actual.getClass().getName()));
     }
 
-    public static RhiFormat toRhiFormat(TextureFormat format) {
+    public static PRhiFormat toRhiFormat(TextureFormat format) {
         return switch (format) {
-            case RGBA8 -> RhiFormat.RGBA8_UNORM;
-            case RED8 -> RhiFormat.R8_UNORM;
-            case DEPTH32 -> RhiFormat.D32_FLOAT;
+            case RGBA8 -> PRhiFormat.RGBA8_UNORM;
+            case RED8 -> PRhiFormat.R8_UNORM;
+            case DEPTH32 -> PRhiFormat.D32_FLOAT;
             case RED8I -> throw new IllegalArgumentException("Prism 0.1.0 has no signed R8 integer format");
         };
     }
 
-    public static TextureFormat toBlazeFormat(RhiFormat format) {
+    public static TextureFormat toBlazeFormat(PRhiFormat format) {
         return switch (format) {
             case RGBA8_UNORM -> TextureFormat.RGBA8;
             case R8_UNORM -> TextureFormat.RED8;
@@ -328,46 +328,46 @@ public final class Blaze3DBridge2612 {
         };
     }
 
-    private static EnumSet<RhiImageUsage> imageUsage(int usage) {
+    private static EnumSet<PRhiImageUsage> imageUsage(int usage) {
         return imageUsage(usage, null);
     }
 
-    private static EnumSet<RhiImageUsage> imageUsage(int usage, TextureFormat format) {
-        var result = EnumSet.noneOf(RhiImageUsage.class);
-        if ((usage & GpuTexture.USAGE_COPY_SRC) != 0) result.add(RhiImageUsage.TRANSFER_SRC);
-        if ((usage & GpuTexture.USAGE_COPY_DST) != 0) result.add(RhiImageUsage.TRANSFER_DST);
-        if ((usage & GpuTexture.USAGE_TEXTURE_BINDING) != 0) result.add(RhiImageUsage.SAMPLED);
+    private static EnumSet<PRhiImageUsage> imageUsage(int usage, TextureFormat format) {
+        var result = EnumSet.noneOf(PRhiImageUsage.class);
+        if ((usage & GpuTexture.USAGE_COPY_SRC) != 0) result.add(PRhiImageUsage.TRANSFER_SRC);
+        if ((usage & GpuTexture.USAGE_COPY_DST) != 0) result.add(PRhiImageUsage.TRANSFER_DST);
+        if ((usage & GpuTexture.USAGE_TEXTURE_BINDING) != 0) result.add(PRhiImageUsage.SAMPLED);
         if ((usage & GpuTexture.USAGE_RENDER_ATTACHMENT) != 0) {
             result.add(format == TextureFormat.DEPTH32
-                    ? RhiImageUsage.DEPTH_STENCIL_ATTACHMENT : RhiImageUsage.COLOR_ATTACHMENT);
+                    ? PRhiImageUsage.DEPTH_STENCIL_ATTACHMENT : PRhiImageUsage.COLOR_ATTACHMENT);
         }
         if (result.isEmpty()) throw new IllegalArgumentException("texture has no compatible usage");
         return result;
     }
 
-    private static EnumSet<RhiBufferUsage> bufferUsage(int usage) {
-        var result = EnumSet.noneOf(RhiBufferUsage.class);
-        if ((usage & GpuBuffer.USAGE_COPY_SRC) != 0) result.add(RhiBufferUsage.TRANSFER_SRC);
-        if ((usage & GpuBuffer.USAGE_COPY_DST) != 0) result.add(RhiBufferUsage.TRANSFER_DST);
-        if ((usage & GpuBuffer.USAGE_VERTEX) != 0) result.add(RhiBufferUsage.VERTEX_BUFFER);
-        if ((usage & GpuBuffer.USAGE_INDEX) != 0) result.add(RhiBufferUsage.INDEX_BUFFER);
-        if ((usage & GpuBuffer.USAGE_UNIFORM) != 0) result.add(RhiBufferUsage.UNIFORM_BUFFER);
-        if ((usage & GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER) != 0) result.add(RhiBufferUsage.STORAGE_BUFFER);
-        if (result.isEmpty()) result.add(RhiBufferUsage.TRANSFER_DST);
+    private static EnumSet<PRhiBufferUsage> bufferUsage(int usage) {
+        var result = EnumSet.noneOf(PRhiBufferUsage.class);
+        if ((usage & GpuBuffer.USAGE_COPY_SRC) != 0) result.add(PRhiBufferUsage.TRANSFER_SRC);
+        if ((usage & GpuBuffer.USAGE_COPY_DST) != 0) result.add(PRhiBufferUsage.TRANSFER_DST);
+        if ((usage & GpuBuffer.USAGE_VERTEX) != 0) result.add(PRhiBufferUsage.VERTEX_BUFFER);
+        if ((usage & GpuBuffer.USAGE_INDEX) != 0) result.add(PRhiBufferUsage.INDEX_BUFFER);
+        if ((usage & GpuBuffer.USAGE_UNIFORM) != 0) result.add(PRhiBufferUsage.UNIFORM_BUFFER);
+        if ((usage & GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER) != 0) result.add(PRhiBufferUsage.STORAGE_BUFFER);
+        if (result.isEmpty()) result.add(PRhiBufferUsage.TRANSFER_DST);
         return result;
     }
 
-    private static RhiMemoryUsage bufferMemoryUsage(int usage) {
-        if ((usage & GpuBuffer.USAGE_MAP_READ) != 0) return RhiMemoryUsage.GPU_TO_CPU;
-        if ((usage & GpuBuffer.USAGE_MAP_WRITE) != 0) return RhiMemoryUsage.CPU_TO_GPU;
-        return RhiMemoryUsage.GPU_ONLY;
+    private static PRhiMemoryUsage bufferMemoryUsage(int usage) {
+        if ((usage & GpuBuffer.USAGE_MAP_READ) != 0) return PRhiMemoryUsage.GPU_TO_CPU;
+        if ((usage & GpuBuffer.USAGE_MAP_WRITE) != 0) return PRhiMemoryUsage.CPU_TO_GPU;
+        return PRhiMemoryUsage.GPU_ONLY;
     }
 
-    private static RhiSamplerAddressMode toRhiAddress(AddressMode mode) {
-        return mode == AddressMode.REPEAT ? RhiSamplerAddressMode.REPEAT : RhiSamplerAddressMode.CLAMP_TO_EDGE;
+    private static PRhiSamplerAddressMode toRhiAddress(AddressMode mode) {
+        return mode == AddressMode.REPEAT ? PRhiSamplerAddressMode.REPEAT : PRhiSamplerAddressMode.CLAMP_TO_EDGE;
     }
 
-    private static AddressMode toBlazeAddress(RhiSamplerAddressMode mode) {
+    private static AddressMode toBlazeAddress(PRhiSamplerAddressMode mode) {
         return switch (mode) {
             case REPEAT -> AddressMode.REPEAT;
             case CLAMP_TO_EDGE -> AddressMode.CLAMP_TO_EDGE;
@@ -376,11 +376,11 @@ public final class Blaze3DBridge2612 {
         };
     }
 
-    private static GpuSampler createGlSampler(RhiSamplerCreateInfo info) {
+    private static GpuSampler createGlSampler(PRhiSamplerCreateInfo info) {
         return new GlSampler(
                 toBlazeAddress(info.addressModeU()), toBlazeAddress(info.addressModeV()),
-                info.minFilter() == RhiFilter.NEAREST ? FilterMode.NEAREST : FilterMode.LINEAR,
-                info.magFilter() == RhiFilter.NEAREST ? FilterMode.NEAREST : FilterMode.LINEAR,
+                info.minFilter() == PRhiFilter.NEAREST ? FilterMode.NEAREST : FilterMode.LINEAR,
+                info.magFilter() == PRhiFilter.NEAREST ? FilterMode.NEAREST : FilterMode.LINEAR,
                 Math.round(info.maxAnisotropy()), java.util.OptionalDouble.empty());
     }
 

@@ -2,8 +2,8 @@ package com.github.slmpc.lumingraphics.mc.v2612.runtime;
 
 import com.github.slmpc.lumingraphics.core.target.RenderTarget;
 import com.github.slmpc.lumingraphics.mc.v2612.bridge.Blaze3DBridge2612;
-import com.github.slmpc.prismrhi.context.RhiContextIdentity;
-import com.github.slmpc.prismrhi.resource.RhiImageView;
+import com.github.slmpc.prismrhi.context.PRhiContextIdentity;
+import com.github.slmpc.prismrhi.resource.PRhiImageView;
 import com.mojang.blaze3d.opengl.GlTextureView;
 import java.util.Objects;
 import java.util.Optional;
@@ -11,11 +11,11 @@ import java.util.function.Supplier;
 
 final class MinecraftRenderTargetBridge2612 implements AutoCloseable {
     private final Blaze3DBridge2612 bridge;
-    private final RhiContextIdentity contextIdentity;
+    private final PRhiContextIdentity contextIdentity;
     private final Supplier<com.mojang.blaze3d.pipeline.RenderTarget> targetSupplier;
     private final BorrowedTargetCache2612<com.mojang.blaze3d.pipeline.RenderTarget, BorrowedTarget> cache;
 
-    MinecraftRenderTargetBridge2612(Blaze3DBridge2612 bridge, RhiContextIdentity contextIdentity,
+    MinecraftRenderTargetBridge2612(Blaze3DBridge2612 bridge, PRhiContextIdentity contextIdentity,
                                     Supplier<com.mojang.blaze3d.pipeline.RenderTarget> targetSupplier) {
         this.bridge = Objects.requireNonNull(bridge, "bridge");
         this.contextIdentity = Objects.requireNonNull(contextIdentity, "contextIdentity");
@@ -37,7 +37,7 @@ final class MinecraftRenderTargetBridge2612 implements AutoCloseable {
     @Override public void close() { cache.close(); }
 
     private BorrowedTarget borrow(com.mojang.blaze3d.pipeline.RenderTarget target) {
-        RhiImageView color = null;
+        PRhiImageView color = null;
         try {
             color = bridge.fromBlazeTextureView((GlTextureView) target.getColorTextureView()).orElseThrow();
             return new BorrowedTarget(new RenderTarget(color, Optional.empty(),
@@ -49,7 +49,7 @@ final class MinecraftRenderTargetBridge2612 implements AutoCloseable {
         }
     }
 
-    private static RuntimeException closeViews(RhiImageView color) {
+    private static RuntimeException closeViews(PRhiImageView color) {
         return GraphicsResourceCloser2612.closeReverse(
                 color, color == null ? null : color.image());
     }
@@ -65,10 +65,10 @@ final class MinecraftRenderTargetBridge2612 implements AutoCloseable {
 
     static final class BorrowedTarget implements AutoCloseable {
         private final RenderTarget target;
-        private final RhiImageView color;
+        private final PRhiImageView color;
         private boolean closed;
 
-        BorrowedTarget(RenderTarget target, RhiImageView color) {
+        BorrowedTarget(RenderTarget target, PRhiImageView color) {
             this.target = target;
             this.color = color;
         }

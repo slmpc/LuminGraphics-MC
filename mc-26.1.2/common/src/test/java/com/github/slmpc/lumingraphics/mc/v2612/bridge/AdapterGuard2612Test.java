@@ -4,9 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.github.slmpc.prismrhi.RhiResourceClosedException;
-import com.github.slmpc.prismrhi.RhiResourceInvalidatedException;
-import com.github.slmpc.prismrhi.context.RhiInvalidationToken;
+import com.github.slmpc.prismrhi.PRhiResourceClosedException;
+import com.github.slmpc.prismrhi.PRhiResourceInvalidatedException;
+import com.github.slmpc.prismrhi.context.PRhiInvalidationToken;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.CommandEncoderBackend;
 import com.mojang.blaze3d.systems.GpuDeviceBackend;
@@ -54,8 +54,8 @@ class AdapterGuard2612Test {
         Adapters adapters = adapters(guard);
         guard.token.invalidate();
 
-        assertThrows(RhiResourceInvalidatedException.class, adapters.encoderAdapter::delegate);
-        assertThrows(RhiResourceInvalidatedException.class, adapters.passAdapter::delegate);
+        assertThrows(PRhiResourceInvalidatedException.class, adapters.encoderAdapter::delegate);
+        assertThrows(PRhiResourceInvalidatedException.class, adapters.passAdapter::delegate);
     }
 
     @Test
@@ -64,8 +64,8 @@ class AdapterGuard2612Test {
         Adapters adapters = adapters(guard);
         guard.token.close();
 
-        assertThrows(RhiResourceClosedException.class, adapters.encoderAdapter::delegate);
-        assertThrows(RhiResourceClosedException.class, adapters.passAdapter::delegate);
+        assertThrows(PRhiResourceClosedException.class, adapters.encoderAdapter::delegate);
+        assertThrows(PRhiResourceClosedException.class, adapters.passAdapter::delegate);
     }
 
     private static Adapters adapters(Guard guard) {
@@ -99,7 +99,7 @@ class AdapterGuard2612Test {
 
     private static final class Guard {
         private final Thread owner = Thread.currentThread();
-        private final RhiInvalidationToken token = new RhiInvalidationToken();
+        private final PRhiInvalidationToken token = new PRhiInvalidationToken();
         private boolean current = true;
 
         private void requireCurrent() {

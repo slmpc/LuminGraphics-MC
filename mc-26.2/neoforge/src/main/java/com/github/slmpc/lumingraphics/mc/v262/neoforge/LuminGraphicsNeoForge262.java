@@ -4,8 +4,8 @@ import com.github.slmpc.lumingraphics.mc.bridge.BridgeContextIdentity;
 import com.github.slmpc.lumingraphics.mc.bridge.BridgeInvalidationToken;
 import com.github.slmpc.lumingraphics.mc.v262.smoke.RealClientBridgeSmoke262;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlExternalContext;
-import com.github.slmpc.prismrhi.context.RhiContextIdentity;
-import com.github.slmpc.prismrhi.context.RhiInvalidationToken;
+import com.github.slmpc.prismrhi.context.PRhiContextIdentity;
+import com.github.slmpc.prismrhi.context.PRhiInvalidationToken;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.common.Mod;
@@ -21,7 +21,7 @@ public final class LuminGraphicsNeoForge262 {
 
     private BorrowedBridgeState state;
     private OpenGlExternalContext smokeContext;
-    private RhiInvalidationToken smokeInvalidation;
+    private PRhiInvalidationToken smokeInvalidation;
 
     public LuminGraphicsNeoForge262() {
         NeoForge.EVENT_BUS.addListener(this::bindOnFirstClientTick);
@@ -50,8 +50,8 @@ public final class LuminGraphicsNeoForge262 {
     private OpenGlExternalContext smokeContext() {
         if (smokeContext != null) { smokeContext.requireCurrent(); return smokeContext; }
         var capabilities = GL.getCapabilities();
-        smokeInvalidation = new RhiInvalidationToken();
-        var identity = new RhiContextIdentity(Integer.toUnsignedLong(System.identityHashCode(capabilities)) + 1L,
+        smokeInvalidation = new PRhiInvalidationToken();
+        var identity = new PRhiContextIdentity(Integer.toUnsignedLong(System.identityHashCode(capabilities)) + 1L,
                 "minecraft-neoforge-26.2-render-context");
         smokeContext = new OpenGlExternalContext(capabilities, Thread.currentThread(), identity, smokeInvalidation,
                 expected -> GL.getCapabilities() == capabilities && identity.equals(expected));

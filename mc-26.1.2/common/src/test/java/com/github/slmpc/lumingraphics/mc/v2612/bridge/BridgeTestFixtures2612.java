@@ -8,24 +8,24 @@ import com.github.slmpc.prismrhi.backend.opengl.OpenGlImageAdoption;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlImageViewAdoption;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlNativeObjectTypes;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlShaderAdoption;
-import com.github.slmpc.prismrhi.context.RhiContextIdentity;
-import com.github.slmpc.prismrhi.context.RhiInvalidationToken;
-import com.github.slmpc.prismrhi.format.RhiExtent3D;
-import com.github.slmpc.prismrhi.format.RhiFormat;
-import com.github.slmpc.prismrhi.pipeline.RhiGraphicsPipeline;
-import com.github.slmpc.prismrhi.resource.RhiBuffer;
-import com.github.slmpc.prismrhi.resource.RhiImage;
-import com.github.slmpc.prismrhi.resource.RhiImageAspect;
-import com.github.slmpc.prismrhi.resource.RhiImageView;
-import com.github.slmpc.prismrhi.resource.RhiNativeObject;
-import com.github.slmpc.prismrhi.resource.RhiNativeObjects;
-import com.github.slmpc.prismrhi.resource.RhiNativeObjectType;
-import com.github.slmpc.prismrhi.resource.RhiOwnership;
-import com.github.slmpc.prismrhi.resource.RhiSampler;
-import com.github.slmpc.prismrhi.resource.RhiSamplerCreateInfo;
-import com.github.slmpc.prismrhi.shader.RhiShader;
-import com.github.slmpc.prismrhi.shader.RhiShaderDesc;
-import com.github.slmpc.prismrhi.shader.RhiShaderHandle;
+import com.github.slmpc.prismrhi.context.PRhiContextIdentity;
+import com.github.slmpc.prismrhi.context.PRhiInvalidationToken;
+import com.github.slmpc.prismrhi.format.PRhiExtent3D;
+import com.github.slmpc.prismrhi.format.PRhiFormat;
+import com.github.slmpc.prismrhi.pipeline.PRhiGraphicsPipeline;
+import com.github.slmpc.prismrhi.resource.PRhiBuffer;
+import com.github.slmpc.prismrhi.resource.PRhiImage;
+import com.github.slmpc.prismrhi.resource.PRhiImageAspect;
+import com.github.slmpc.prismrhi.resource.PRhiImageView;
+import com.github.slmpc.prismrhi.resource.PRhiNativeObject;
+import com.github.slmpc.prismrhi.resource.PRhiNativeObjects;
+import com.github.slmpc.prismrhi.resource.PRhiNativeObjectType;
+import com.github.slmpc.prismrhi.resource.PRhiOwnership;
+import com.github.slmpc.prismrhi.resource.PRhiSampler;
+import com.github.slmpc.prismrhi.resource.PRhiSamplerCreateInfo;
+import com.github.slmpc.prismrhi.shader.PRhiShader;
+import com.github.slmpc.prismrhi.shader.PRhiShaderDesc;
+import com.github.slmpc.prismrhi.shader.PRhiShaderHandle;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -37,16 +37,16 @@ final class BridgeTestFixtures2612 {
     private BridgeTestFixtures2612() { }
 
     static final class Context implements BridgeContext2612 {
-        final RhiContextIdentity identity = new RhiContextIdentity(2612, "test-2612");
-        final RhiInvalidationToken token = new RhiInvalidationToken();
+        final PRhiContextIdentity identity = new PRhiContextIdentity(2612, "test-2612");
+        final PRhiInvalidationToken token = new PRhiInvalidationToken();
         boolean current = true;
 
         @Override public void requireCurrent() {
             token.requireValid();
             if (!current) throw new IllegalStateException("test context is not current");
         }
-        @Override public RhiContextIdentity identity() { return identity; }
-        @Override public RhiInvalidationToken invalidation() { return token; }
+        @Override public PRhiContextIdentity identity() { return identity; }
+        @Override public PRhiInvalidationToken invalidation() { return token; }
     }
 
     static final class Device implements InvocationHandler {
@@ -55,7 +55,7 @@ final class BridgeTestFixtures2612 {
         OpenGlImageViewAdoption viewAdoption;
         OpenGlBufferAdoption bufferAdoption;
         OpenGlShaderAdoption shaderAdoption;
-        RhiSamplerCreateInfo samplerInfo;
+        PRhiSamplerCreateInfo samplerInfo;
 
         Device(Context context) { this.context = context; }
 
@@ -70,7 +70,7 @@ final class BridgeTestFixtures2612 {
                 case "adoptImageView" -> adoptView((OpenGlImageViewAdoption) args[0]);
                 case "adoptBuffer" -> adoptBuffer((OpenGlBufferAdoption) args[0]);
                 case "adoptShader" -> adoptShader((OpenGlShaderAdoption) args[0]);
-                case "createSampler" -> createSampler((RhiSamplerCreateInfo) args[0]);
+                case "createSampler" -> createSampler((PRhiSamplerCreateInfo) args[0]);
                 case "api" -> BackendApi.OPENGL_41;
                 case "close" -> null;
                 case "toString" -> "OpenGlExternalDevice[test]";
@@ -78,77 +78,77 @@ final class BridgeTestFixtures2612 {
             };
         }
 
-        private RhiImage adoptImage(OpenGlImageAdoption adoption) {
+        private PRhiImage adoptImage(OpenGlImageAdoption adoption) {
             imageAdoption = adoption;
             return image(adoption.nativeObject().value(), adoption.createInfo().extent(),
                     adoption.createInfo().format(), adoption.contextIdentity(), adoption.invalidationToken());
         }
 
-        private RhiImageView adoptView(OpenGlImageViewAdoption adoption) {
+        private PRhiImageView adoptView(OpenGlImageViewAdoption adoption) {
             viewAdoption = adoption;
             return imageView(adoption.createInfo().image(), context.identity, context.token);
         }
 
-        private RhiBuffer adoptBuffer(OpenGlBufferAdoption adoption) {
+        private PRhiBuffer adoptBuffer(OpenGlBufferAdoption adoption) {
             bufferAdoption = adoption;
             return buffer(adoption.nativeObject().value(), adoption.createInfo().size(),
                     adoption.contextIdentity(), adoption.invalidationToken());
         }
 
-        private RhiShader adoptShader(OpenGlShaderAdoption adoption) {
+        private PRhiShader adoptShader(OpenGlShaderAdoption adoption) {
             shaderAdoption = adoption;
             return shader(adoption.nativeObject().value(), adoption.desc(),
                     adoption.contextIdentity(), adoption.invalidationToken());
         }
 
-        private RhiSampler createSampler(RhiSamplerCreateInfo info) {
+        private PRhiSampler createSampler(PRhiSamplerCreateInfo info) {
             samplerInfo = info;
             return sampler(104, context.identity, context.token);
         }
     }
 
-    static RhiImage image(long handle, RhiExtent3D extent, RhiFormat format,
-                          RhiContextIdentity identity, RhiInvalidationToken token) {
-        return resource(RhiImage.class, OpenGlNativeObjectTypes.TEXTURE, handle, identity, token,
+    static PRhiImage image(long handle, PRhiExtent3D extent, PRhiFormat format,
+                          PRhiContextIdentity identity, PRhiInvalidationToken token) {
+        return resource(PRhiImage.class, OpenGlNativeObjectTypes.TEXTURE, handle, identity, token,
                 Map.of("extent", extent, "format", format));
     }
 
-    static RhiImageView imageView(RhiImage image, RhiContextIdentity identity, RhiInvalidationToken token) {
-        return resource(RhiImageView.class, OpenGlNativeObjectTypes.TEXTURE,
-                RhiNativeObjects.requireValue(image, OpenGlNativeObjectTypes.TEXTURE), identity, token,
-                Map.of("image", image, "format", image.format(), "aspects", Set.of(RhiImageAspect.COLOR)));
+    static PRhiImageView imageView(PRhiImage image, PRhiContextIdentity identity, PRhiInvalidationToken token) {
+        return resource(PRhiImageView.class, OpenGlNativeObjectTypes.TEXTURE,
+                PRhiNativeObjects.requireValue(image, OpenGlNativeObjectTypes.TEXTURE), identity, token,
+                Map.of("image", image, "format", image.format(), "aspects", Set.of(PRhiImageAspect.COLOR)));
     }
 
-    static RhiBuffer buffer(long handle, long size, RhiContextIdentity identity, RhiInvalidationToken token) {
-        return resource(RhiBuffer.class, OpenGlNativeObjectTypes.BUFFER, handle, identity, token,
+    static PRhiBuffer buffer(long handle, long size, PRhiContextIdentity identity, PRhiInvalidationToken token) {
+        return resource(PRhiBuffer.class, OpenGlNativeObjectTypes.BUFFER, handle, identity, token,
                 Map.of("size", size));
     }
 
-    static RhiSampler sampler(long handle, RhiContextIdentity identity, RhiInvalidationToken token) {
-        return resource(RhiSampler.class, OpenGlNativeObjectTypes.SAMPLER, handle, identity, token, Map.of());
+    static PRhiSampler sampler(long handle, PRhiContextIdentity identity, PRhiInvalidationToken token) {
+        return resource(PRhiSampler.class, OpenGlNativeObjectTypes.SAMPLER, handle, identity, token, Map.of());
     }
 
-    static RhiGraphicsPipeline pipeline(long handle, RhiContextIdentity identity, RhiInvalidationToken token) {
-        return resource(RhiGraphicsPipeline.class, OpenGlNativeObjectTypes.PROGRAM, handle, identity, token, Map.of());
+    static PRhiGraphicsPipeline pipeline(long handle, PRhiContextIdentity identity, PRhiInvalidationToken token) {
+        return resource(PRhiGraphicsPipeline.class, OpenGlNativeObjectTypes.PROGRAM, handle, identity, token, Map.of());
     }
 
-    static RhiShader shader(long handle, RhiShaderDesc desc,
-                            RhiContextIdentity identity, RhiInvalidationToken token) {
-        return RhiShaderHandle.adopted(BackendApi.OPENGL_41, desc,
-                new RhiNativeObject(OpenGlNativeObjectTypes.SHADER, handle), OpenGlNativeObjectTypes.SHADER,
-                RhiOwnership.BORROWED, identity, identity, token, ignored -> { });
+    static PRhiShader shader(long handle, PRhiShaderDesc desc,
+                            PRhiContextIdentity identity, PRhiInvalidationToken token) {
+        return PRhiShaderHandle.adopted(BackendApi.OPENGL_41, desc,
+                new PRhiNativeObject(OpenGlNativeObjectTypes.SHADER, handle), OpenGlNativeObjectTypes.SHADER,
+                PRhiOwnership.BORROWED, identity, identity, token, ignored -> { });
     }
 
-    private static <T> T resource(Class<T> type, RhiNativeObjectType nativeType, long handle,
-                                  RhiContextIdentity identity, RhiInvalidationToken token,
+    private static <T> T resource(Class<T> type, PRhiNativeObjectType nativeType, long handle,
+                                  PRhiContextIdentity identity, PRhiInvalidationToken token,
                                   Map<String, Object> values) {
-        RhiNativeObject nativeObject = new RhiNativeObject(nativeType, handle);
+        PRhiNativeObject nativeObject = new PRhiNativeObject(nativeType, handle);
         InvocationHandler handler = (proxy, method, args) -> switch (method.getName()) {
             case "api" -> BackendApi.OPENGL_41;
-            case "ownership" -> RhiOwnership.BORROWED;
+            case "ownership" -> PRhiOwnership.BORROWED;
             case "contextIdentity" -> identity;
             case "invalidationToken" -> token;
-            case "getNativeObject" -> nativeObject((RhiNativeObjectType) args[0], nativeObject);
+            case "getNativeObject" -> nativeObject((PRhiNativeObjectType) args[0], nativeObject);
             case "close" -> null;
             case "toString" -> type.getSimpleName() + "[test]";
             case "hashCode" -> System.identityHashCode(proxy);
@@ -158,8 +158,8 @@ final class BridgeTestFixtures2612 {
         return proxy(type, handler, type, OpenGlAdoptedResource.class);
     }
 
-    private static Optional<RhiNativeObject> nativeObject(RhiNativeObjectType requested,
-                                                           RhiNativeObject nativeObject) {
+    private static Optional<PRhiNativeObject> nativeObject(PRhiNativeObjectType requested,
+                                                           PRhiNativeObject nativeObject) {
         return requested.hasSameId(nativeObject.type()) ? Optional.of(nativeObject) : Optional.empty();
     }
 

@@ -9,24 +9,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.github.slmpc.lumingraphics.mc.bridge.BridgeResult;
 import com.github.slmpc.lumingraphics.mc.bridge.BridgeUnsupportedReason;
 import com.github.slmpc.lumingraphics.mc.v2612.access.BorrowedBlazeResource2612;
-import com.github.slmpc.prismrhi.RhiResourceInvalidatedException;
+import com.github.slmpc.prismrhi.PRhiResourceInvalidatedException;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlNativeObjectTypes;
-import com.github.slmpc.prismrhi.context.RhiContextIdentity;
-import com.github.slmpc.prismrhi.context.RhiInvalidationToken;
-import com.github.slmpc.prismrhi.format.RhiExtent3D;
-import com.github.slmpc.prismrhi.format.RhiFormat;
-import com.github.slmpc.prismrhi.pipeline.RhiGraphicsPipeline;
-import com.github.slmpc.prismrhi.resource.RhiBuffer;
-import com.github.slmpc.prismrhi.resource.RhiFilter;
-import com.github.slmpc.prismrhi.resource.RhiImage;
-import com.github.slmpc.prismrhi.resource.RhiImageView;
-import com.github.slmpc.prismrhi.resource.RhiNativeObjects;
-import com.github.slmpc.prismrhi.resource.RhiSampler;
-import com.github.slmpc.prismrhi.resource.RhiSamplerAddressMode;
-import com.github.slmpc.prismrhi.resource.RhiSamplerCreateInfo;
-import com.github.slmpc.prismrhi.shader.RhiShader;
-import com.github.slmpc.prismrhi.shader.RhiShaderDesc;
-import com.github.slmpc.prismrhi.shader.RhiShaderStage;
+import com.github.slmpc.prismrhi.context.PRhiContextIdentity;
+import com.github.slmpc.prismrhi.context.PRhiInvalidationToken;
+import com.github.slmpc.prismrhi.format.PRhiExtent3D;
+import com.github.slmpc.prismrhi.format.PRhiFormat;
+import com.github.slmpc.prismrhi.pipeline.PRhiGraphicsPipeline;
+import com.github.slmpc.prismrhi.resource.PRhiBuffer;
+import com.github.slmpc.prismrhi.resource.PRhiFilter;
+import com.github.slmpc.prismrhi.resource.PRhiImage;
+import com.github.slmpc.prismrhi.resource.PRhiImageView;
+import com.github.slmpc.prismrhi.resource.PRhiNativeObjects;
+import com.github.slmpc.prismrhi.resource.PRhiSampler;
+import com.github.slmpc.prismrhi.resource.PRhiSamplerAddressMode;
+import com.github.slmpc.prismrhi.resource.PRhiSamplerCreateInfo;
+import com.github.slmpc.prismrhi.shader.PRhiShader;
+import com.github.slmpc.prismrhi.shader.PRhiShaderDesc;
+import com.github.slmpc.prismrhi.shader.PRhiShaderStage;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.opengl.GlProgram;
@@ -67,27 +67,27 @@ class BridgeMatrix2612Test {
         BorrowedGlBuffer2612 buffer = new BorrowedGlBuffer2612(GpuBuffer.USAGE_VERTEX, 64, 102);
         GlShaderModule shader = new BorrowedGlShaderModule2612(103,
                 Identifier.fromNamespaceAndPath("test", "vertex"), ShaderType.VERTEX);
-        GpuSampler sampler = new TestSampler(RhiSamplerCreateInfo.linearRepeat());
+        GpuSampler sampler = new TestSampler(PRhiSamplerCreateInfo.linearRepeat());
 
-        RhiImage image = fixture.bridge.fromBlazeTexture(texture).orElseThrow();
-        RhiImageView importedView = fixture.bridge.fromBlazeTextureView(view).orElseThrow();
+        PRhiImage image = fixture.bridge.fromBlazeTexture(texture).orElseThrow();
+        PRhiImageView importedView = fixture.bridge.fromBlazeTextureView(view).orElseThrow();
         RhiBufferSlice2612 importedSlice = fixture.bridge.fromBlazeBuffer(
                 new GpuBufferSlice(buffer, 8, 16)).orElseThrow();
-        RhiShader importedShader = fixture.bridge.fromBlazeShader(shader).orElseThrow();
-        RhiSampler importedSampler = fixture.bridge.fromBlazeSampler(sampler).orElseThrow();
+        PRhiShader importedShader = fixture.bridge.fromBlazeShader(shader).orElseThrow();
+        PRhiSampler importedSampler = fixture.bridge.fromBlazeSampler(sampler).orElseThrow();
 
         assertEquals(101, fixture.device.imageAdoption.nativeObject().value());
         assertSame(fixture.device.viewAdoption.createInfo().image(), importedView.image());
-        assertEquals(101, RhiNativeObjects.requireValue(image, OpenGlNativeObjectTypes.TEXTURE));
-        assertEquals(101, RhiNativeObjects.requireValue(importedView, OpenGlNativeObjectTypes.TEXTURE));
-        assertEquals(101, RhiNativeObjects.requireValue(importedView.image(), OpenGlNativeObjectTypes.TEXTURE));
+        assertEquals(101, PRhiNativeObjects.requireValue(image, OpenGlNativeObjectTypes.TEXTURE));
+        assertEquals(101, PRhiNativeObjects.requireValue(importedView, OpenGlNativeObjectTypes.TEXTURE));
+        assertEquals(101, PRhiNativeObjects.requireValue(importedView.image(), OpenGlNativeObjectTypes.TEXTURE));
         assertEquals(102, fixture.device.bufferAdoption.nativeObject().value());
         assertEquals(8, importedSlice.offset());
         assertEquals(16, importedSlice.length());
-        assertEquals(RhiShaderStage.VERTEX, importedShader.desc().stage());
+        assertEquals(PRhiShaderStage.VERTEX, importedShader.desc().stage());
         assertEquals(103, fixture.device.shaderAdoption.nativeObject().value());
-        assertInstanceOf(RhiSampler.class, importedSampler);
-        assertEquals(RhiFilter.LINEAR, fixture.device.samplerInfo.minFilter());
+        assertInstanceOf(PRhiSampler.class, importedSampler);
+        assertEquals(PRhiFilter.LINEAR, fixture.device.samplerInfo.minFilter());
 
         view.close();
         texture.close();
@@ -98,15 +98,15 @@ class BridgeMatrix2612Test {
     @Test
     void prismResourcesExecuteAllExportsAsBorrowedMinecraftWrappers() {
         Fixture fixture = new Fixture();
-        RhiImage image = BridgeTestFixtures2612.image(201, new RhiExtent3D(8, 4, 1),
-                RhiFormat.RGBA8_UNORM, fixture.context.identity, fixture.context.token);
-        RhiImageView view = BridgeTestFixtures2612.imageView(image, fixture.context.identity, fixture.context.token);
-        RhiBuffer buffer = BridgeTestFixtures2612.buffer(202, 64, fixture.context.identity, fixture.context.token);
-        RhiShader shader = BridgeTestFixtures2612.shader(203,
-                new RhiShaderDesc(RhiShaderStage.FRAGMENT, "main", "fragment"),
+        PRhiImage image = BridgeTestFixtures2612.image(201, new PRhiExtent3D(8, 4, 1),
+                PRhiFormat.RGBA8_UNORM, fixture.context.identity, fixture.context.token);
+        PRhiImageView view = BridgeTestFixtures2612.imageView(image, fixture.context.identity, fixture.context.token);
+        PRhiBuffer buffer = BridgeTestFixtures2612.buffer(202, 64, fixture.context.identity, fixture.context.token);
+        PRhiShader shader = BridgeTestFixtures2612.shader(203,
+                new PRhiShaderDesc(PRhiShaderStage.FRAGMENT, "main", "fragment"),
                 fixture.context.identity, fixture.context.token);
-        RhiSampler sampler = BridgeTestFixtures2612.sampler(204, fixture.context.identity, fixture.context.token);
-        RhiSamplerCreateInfo samplerInfo = RhiSamplerCreateInfo.linearRepeat();
+        PRhiSampler sampler = BridgeTestFixtures2612.sampler(204, fixture.context.identity, fixture.context.token);
+        PRhiSamplerCreateInfo samplerInfo = PRhiSamplerCreateInfo.linearRepeat();
 
         GpuTexture texture = fixture.bridge.toBlazeTexture(image, 2, "texture").orElseThrow();
         GlTextureView exportedView = fixture.bridge.toBlazeTextureView(view, 1, 1, "view").orElseThrow();
@@ -132,12 +132,12 @@ class BridgeMatrix2612Test {
     @Test
     void invalidStateMetadataAndTypesFailBeforeNativeAccess() {
         Fixture fixture = new Fixture();
-        RhiContextIdentity otherIdentity = new RhiContextIdentity(2613, "other");
-        RhiImage wrongContext = BridgeTestFixtures2612.image(301, new RhiExtent3D(4, 4, 1),
-                RhiFormat.RGBA8_UNORM, otherIdentity, fixture.context.token);
-        RhiInvalidationToken staleToken = new RhiInvalidationToken();
-        RhiImage stale = BridgeTestFixtures2612.image(302, new RhiExtent3D(4, 4, 1),
-                RhiFormat.RGBA8_UNORM, fixture.context.identity, staleToken);
+        PRhiContextIdentity otherIdentity = new PRhiContextIdentity(2613, "other");
+        PRhiImage wrongContext = BridgeTestFixtures2612.image(301, new PRhiExtent3D(4, 4, 1),
+                PRhiFormat.RGBA8_UNORM, otherIdentity, fixture.context.token);
+        PRhiInvalidationToken staleToken = new PRhiInvalidationToken();
+        PRhiImage stale = BridgeTestFixtures2612.image(302, new PRhiExtent3D(4, 4, 1),
+                PRhiFormat.RGBA8_UNORM, fixture.context.identity, staleToken);
         staleToken.invalidate();
         BorrowedGlTexture2612 closedTexture = texture(303);
         closedTexture.close();
@@ -154,12 +154,12 @@ class BridgeMatrix2612Test {
         assertEquals(BridgeUnsupportedReason.MC_SHAPE_CHANGED,
                 reason(fixture.bridge.fromBlazeBuffer(new GpuBufferSlice(buffer, 24, 16))));
         assertThrows(IllegalArgumentException.class, () -> fixture.bridge.toBlazeTexture(
-                BridgeTestFixtures2612.image(305, new RhiExtent3D(4, 4, 1), RhiFormat.BGRA8_UNORM,
+                BridgeTestFixtures2612.image(305, new PRhiExtent3D(4, 4, 1), PRhiFormat.BGRA8_UNORM,
                         fixture.context.identity, fixture.context.token), 1, "format"));
 
-        RhiSamplerCreateInfo unsupportedSampler = new RhiSamplerCreateInfo(RhiFilter.LINEAR, RhiFilter.LINEAR,
-                RhiSamplerAddressMode.MIRRORED_REPEAT, RhiSamplerAddressMode.REPEAT,
-                RhiSamplerAddressMode.REPEAT, 0);
+        PRhiSamplerCreateInfo unsupportedSampler = new PRhiSamplerCreateInfo(PRhiFilter.LINEAR, PRhiFilter.LINEAR,
+                PRhiSamplerAddressMode.MIRRORED_REPEAT, PRhiSamplerAddressMode.REPEAT,
+                PRhiSamplerAddressMode.REPEAT, 0);
         assertEquals(BridgeUnsupportedReason.MC_SHAPE_CHANGED, reason(fixture.bridge.toBlazeSampler(
                 BridgeTestFixtures2612.sampler(306, fixture.context.identity, fixture.context.token),
                 unsupportedSampler)));
@@ -173,7 +173,7 @@ class BridgeMatrix2612Test {
     void pipelineAndCommandAdaptersExecuteMetadataStalenessAndContextGuards() {
         Fixture fixture = new Fixture();
         RenderPipeline pipeline = pipeline();
-        RhiGraphicsPipeline rebuilt = BridgeTestFixtures2612.pipeline(
+        PRhiGraphicsPipeline rebuilt = BridgeTestFixtures2612.pipeline(
                 401, fixture.context.identity, fixture.context.token);
         AtomicReference<PipelineMetadata2612> metadata = new AtomicReference<>();
         AtomicInteger rebuilds = new AtomicInteger();
@@ -213,10 +213,10 @@ class BridgeMatrix2612Test {
         assertThrows(IllegalStateException.class, passAdapter::access);
         fixture.context.current = true;
         fixture.context.token.invalidate();
-        assertThrows(RhiResourceInvalidatedException.class, encoderAdapter::delegate);
-        assertThrows(RhiResourceInvalidatedException.class, passAdapter::delegate);
-        assertThrows(RhiResourceInvalidatedException.class, encoderAdapter::access);
-        assertThrows(RhiResourceInvalidatedException.class, passAdapter::access);
+        assertThrows(PRhiResourceInvalidatedException.class, encoderAdapter::delegate);
+        assertThrows(PRhiResourceInvalidatedException.class, passAdapter::delegate);
+        assertThrows(PRhiResourceInvalidatedException.class, encoderAdapter::access);
+        assertThrows(PRhiResourceInvalidatedException.class, passAdapter::access);
     }
 
     private static RenderPipeline pipeline() {
@@ -254,10 +254,10 @@ class BridgeMatrix2612Test {
     }
 
     private static final class TestSampler extends GpuSampler {
-        private final RhiSamplerCreateInfo info;
+        private final PRhiSamplerCreateInfo info;
         private boolean closed;
 
-        private TestSampler(RhiSamplerCreateInfo info) { this.info = info; }
+        private TestSampler(PRhiSamplerCreateInfo info) { this.info = info; }
         @Override public AddressMode getAddressModeU() { return address(info.addressModeU()); }
         @Override public AddressMode getAddressModeV() { return address(info.addressModeV()); }
         @Override public FilterMode getMinFilter() { return filter(info.minFilter()); }
@@ -266,11 +266,11 @@ class BridgeMatrix2612Test {
         @Override public OptionalDouble getMaxLod() { return OptionalDouble.empty(); }
         @Override public void close() { closed = true; }
 
-        private static AddressMode address(RhiSamplerAddressMode mode) {
-            return mode == RhiSamplerAddressMode.REPEAT ? AddressMode.REPEAT : AddressMode.CLAMP_TO_EDGE;
+        private static AddressMode address(PRhiSamplerAddressMode mode) {
+            return mode == PRhiSamplerAddressMode.REPEAT ? AddressMode.REPEAT : AddressMode.CLAMP_TO_EDGE;
         }
-        private static FilterMode filter(RhiFilter filter) {
-            return filter == RhiFilter.NEAREST ? FilterMode.NEAREST : FilterMode.LINEAR;
+        private static FilterMode filter(PRhiFilter filter) {
+            return filter == PRhiFilter.NEAREST ? FilterMode.NEAREST : FilterMode.LINEAR;
         }
     }
 

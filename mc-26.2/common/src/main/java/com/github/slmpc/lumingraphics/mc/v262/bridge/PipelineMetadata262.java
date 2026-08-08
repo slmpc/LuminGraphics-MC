@@ -1,16 +1,16 @@
 package com.github.slmpc.lumingraphics.mc.v262.bridge;
 
-import com.github.slmpc.prismrhi.command.RhiPrimitiveTopology;
-import com.github.slmpc.prismrhi.format.RhiFormat;
+import com.github.slmpc.prismrhi.command.PRhiPrimitiveTopology;
+import com.github.slmpc.prismrhi.format.PRhiFormat;
 import com.mojang.blaze3d.pipeline.BindGroupLayout;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-public record PipelineMetadata262(String debugName, RhiPrimitiveTopology topology,
+public record PipelineMetadata262(String debugName, PRhiPrimitiveTopology topology,
                                   List<VertexBinding> vertexBindings, List<Binding> bindings,
-                                  List<RhiFormat> colorFormats) {
+                                  List<PRhiFormat> colorFormats) {
     public PipelineMetadata262 {
         vertexBindings = List.copyOf(vertexBindings);
         bindings = List.copyOf(bindings);
@@ -38,9 +38,9 @@ public record PipelineMetadata262(String debugName, RhiPrimitiveTopology topolog
                         uniform.gpuFormat() == null ? null : BridgeTranslations262.format(uniform.gpuFormat())));
             }
         }
-        List<RhiFormat> colors = new ArrayList<>();
+        List<PRhiFormat> colors = new ArrayList<>();
         for (var state : pipeline.getColorTargetStates()) {
-            colors.add(state == null ? RhiFormat.UNDEFINED : BridgeTranslations262.format(state.format()));
+            colors.add(state == null ? PRhiFormat.UNDEFINED : BridgeTranslations262.format(state.format()));
         }
         return new PipelineMetadata262(pipeline.getLocation().toString(),
                 BridgeTranslations262.topology(pipeline.getPrimitiveTopology()), vertices, bindings, colors);
@@ -49,6 +49,6 @@ public record PipelineMetadata262(String debugName, RhiPrimitiveTopology topolog
     public record VertexBinding(int slot, int stride, int stepRate, List<Attribute> attributes) {
         public VertexBinding { attributes = List.copyOf(attributes); }
     }
-    public record Attribute(String name, int offset, RhiFormat format) { }
-    public record Binding(int group, String name, String kind, RhiFormat texelFormat) { }
+    public record Attribute(String name, int offset, PRhiFormat format) { }
+    public record Binding(int group, String name, String kind, PRhiFormat texelFormat) { }
 }

@@ -12,33 +12,33 @@ import com.github.slmpc.lumingraphics.mc.bridge.BridgeWrongContextException;
 import com.github.slmpc.lumingraphics.mc.v262.access.GlObjectFactory262;
 import com.github.slmpc.lumingraphics.mc.v262.access.GlShaderModuleAccess262;
 import com.github.slmpc.prismrhi.backend.BackendApi;
-import com.github.slmpc.prismrhi.RhiInvalidArgumentException;
-import com.github.slmpc.prismrhi.RhiInvalidStateException;
-import com.github.slmpc.prismrhi.RhiResourceClosedException;
-import com.github.slmpc.prismrhi.RhiResourceInvalidatedException;
+import com.github.slmpc.prismrhi.PRhiInvalidArgumentException;
+import com.github.slmpc.prismrhi.PRhiInvalidStateException;
+import com.github.slmpc.prismrhi.PRhiResourceClosedException;
+import com.github.slmpc.prismrhi.PRhiResourceInvalidatedException;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlBufferAdoption;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlAdoptedResource;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlExternalDevice;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlImageAdoption;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlImageViewAdoption;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlNativeObjectTypes;
-import com.github.slmpc.prismrhi.context.RhiContextIdentity;
-import com.github.slmpc.prismrhi.context.RhiInvalidationToken;
-import com.github.slmpc.prismrhi.format.RhiExtent3D;
-import com.github.slmpc.prismrhi.pipeline.RhiGraphicsPipeline;
-import com.github.slmpc.prismrhi.resource.RhiBuffer;
-import com.github.slmpc.prismrhi.resource.RhiBufferCreateInfo;
-import com.github.slmpc.prismrhi.resource.RhiImage;
-import com.github.slmpc.prismrhi.resource.RhiImageCreateInfo;
-import com.github.slmpc.prismrhi.resource.RhiImageView;
-import com.github.slmpc.prismrhi.resource.RhiImageViewCreateInfo;
-import com.github.slmpc.prismrhi.resource.RhiNativeObject;
-import com.github.slmpc.prismrhi.resource.RhiOwnership;
-import com.github.slmpc.prismrhi.resource.RhiSampler;
-import com.github.slmpc.prismrhi.shader.RhiShader;
-import com.github.slmpc.prismrhi.shader.RhiShaderDesc;
-import com.github.slmpc.prismrhi.shader.RhiShaderNativeObjectTypes;
-import com.github.slmpc.prismrhi.shader.RhiShaderStage;
+import com.github.slmpc.prismrhi.context.PRhiContextIdentity;
+import com.github.slmpc.prismrhi.context.PRhiInvalidationToken;
+import com.github.slmpc.prismrhi.format.PRhiExtent3D;
+import com.github.slmpc.prismrhi.pipeline.PRhiGraphicsPipeline;
+import com.github.slmpc.prismrhi.resource.PRhiBuffer;
+import com.github.slmpc.prismrhi.resource.PRhiBufferCreateInfo;
+import com.github.slmpc.prismrhi.resource.PRhiImage;
+import com.github.slmpc.prismrhi.resource.PRhiImageCreateInfo;
+import com.github.slmpc.prismrhi.resource.PRhiImageView;
+import com.github.slmpc.prismrhi.resource.PRhiImageViewCreateInfo;
+import com.github.slmpc.prismrhi.resource.PRhiNativeObject;
+import com.github.slmpc.prismrhi.resource.PRhiOwnership;
+import com.github.slmpc.prismrhi.resource.PRhiSampler;
+import com.github.slmpc.prismrhi.shader.PRhiShader;
+import com.github.slmpc.prismrhi.shader.PRhiShaderDesc;
+import com.github.slmpc.prismrhi.shader.PRhiShaderNativeObjectTypes;
+import com.github.slmpc.prismrhi.shader.PRhiShaderStage;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.opengl.DirectStateAccess;
@@ -64,16 +64,16 @@ public final class Blaze3DBridge262 {
     private final OpenGlExternalDevice rhiDevice;
     private final BridgeContextIdentity bridgeContext;
     private final BridgeInvalidationToken bridgeToken;
-    private final RhiContextIdentity rhiContext;
-    private final RhiInvalidationToken rhiToken;
+    private final PRhiContextIdentity rhiContext;
+    private final PRhiInvalidationToken rhiToken;
     private final Object glCapabilities;
     private final Supplier<?> currentGlCapabilities;
     private final Supplier<BridgeContextIdentity> currentBridgeContext;
     private final GlObjectFactory262 glFactory;
 
     public Blaze3DBridge262(OpenGlExternalDevice rhiDevice, BridgeContextIdentity bridgeContext,
-            BridgeInvalidationToken bridgeToken, RhiContextIdentity rhiContext,
-            RhiInvalidationToken rhiToken, Object glCapabilities, Supplier<?> currentGlCapabilities,
+            BridgeInvalidationToken bridgeToken, PRhiContextIdentity rhiContext,
+            PRhiInvalidationToken rhiToken, Object glCapabilities, Supplier<?> currentGlCapabilities,
             Supplier<BridgeContextIdentity> currentBridgeContext, GlObjectFactory262 glFactory) {
         this.rhiDevice = Objects.requireNonNull(rhiDevice, "rhiDevice");
         this.bridgeContext = Objects.requireNonNull(bridgeContext, "bridgeContext");
@@ -92,21 +92,21 @@ public final class Blaze3DBridge262 {
         }
     }
 
-    public BridgeResult<BridgeLease<RhiImage>> textureToLumin(GpuTexture source) {
+    public BridgeResult<BridgeLease<PRhiImage>> textureToLumin(GpuTexture source) {
         if (!(source instanceof GlTexture texture)) return subtype("texture", source);
         BridgeCompatibilityAudit audit = minecraftAudit("texture", "GlTexture", texture.glId(), () -> !texture.isClosed());
         if (!audit.isCompatible()) return unsupported(audit);
         try {
-            RhiImageCreateInfo info = new RhiImageCreateInfo(
-                    new RhiExtent3D(texture.getWidth(0), texture.getHeight(0), texture.getDepthOrLayers()),
+            PRhiImageCreateInfo info = new PRhiImageCreateInfo(
+                    new PRhiExtent3D(texture.getWidth(0), texture.getHeight(0), texture.getDepthOrLayers()),
                     BridgeTranslations262.format(texture.getFormat()),
                     BridgeTranslations262.imageUsage(texture.usage(), texture.getFormat()),
-                    com.github.slmpc.prismrhi.resource.RhiMemoryUsage.GPU_ONLY);
-            RhiImage adopted = rhiDevice.adoptImage(new OpenGlImageAdoption(
-                    new RhiNativeObject(OpenGlNativeObjectTypes.TEXTURE, texture.glId()), info,
-                    RhiOwnership.BORROWED, rhiContext, rhiToken));
+                    com.github.slmpc.prismrhi.resource.PRhiMemoryUsage.GPU_ONLY);
+            PRhiImage adopted = rhiDevice.adoptImage(new OpenGlImageAdoption(
+                    new PRhiNativeObject(OpenGlNativeObjectTypes.TEXTURE, texture.glId()), info,
+                    PRhiOwnership.BORROWED, rhiContext, rhiToken));
             return success(adopted);
-        } catch (IllegalArgumentException | RhiResourceClosedException | RhiResourceInvalidatedException error) {
+        } catch (IllegalArgumentException | PRhiResourceClosedException | PRhiResourceInvalidatedException error) {
             return drift("texture metadata/adoption failed: " + error.getMessage());
         }
     }
@@ -114,20 +114,20 @@ public final class Blaze3DBridge262 {
     public BridgeResult<BridgeLease<RhiTextureView262>> textureViewToLumin(GpuTextureView source) {
         if (!(source instanceof GlTextureView view)) return subtype("texture-view", source);
         if (view.isClosed() || view.texture().isClosed()) return state(BridgeUnsupportedReason.CLOSED, "texture view or parent is closed");
-        BridgeResult<BridgeLease<RhiImage>> imageResult = textureToLumin(view.texture());
-        if (imageResult instanceof BridgeResult.Unsupported<BridgeLease<RhiImage>> unsupported) {
+        BridgeResult<BridgeLease<PRhiImage>> imageResult = textureToLumin(view.texture());
+        if (imageResult instanceof BridgeResult.Unsupported<BridgeLease<PRhiImage>> unsupported) {
             return BridgeResult.unsupported(unsupported.detail());
         }
-        RhiImage image = imageResult.orElseThrow().access(bridgeContext);
-        RhiImageViewCreateInfo info = RhiImageViewCreateInfo.builder(image)
+        PRhiImage image = imageResult.orElseThrow().access(bridgeContext);
+        PRhiImageViewCreateInfo info = PRhiImageViewCreateInfo.builder(image)
                 .format(BridgeTranslations262.format(view.texture().getFormat()))
                 .mipRange(view.baseMipLevel(), view.mipLevels()).build();
         try {
-            RhiImageView rhiView = rhiDevice.adoptImageView(new OpenGlImageViewAdoption(info));
+            PRhiImageView rhiView = rhiDevice.adoptImageView(new OpenGlImageViewAdoption(info));
             RhiTextureView262 value = new RhiTextureView262(image, rhiView);
             return BridgeResult.success(BridgeLease.owned(value, bridgeContext, bridgeToken,
                     this::requireCloseContext, value::close));
-        } catch (RhiInvalidArgumentException | RhiResourceClosedException | RhiResourceInvalidatedException error) {
+        } catch (PRhiInvalidArgumentException | PRhiResourceClosedException | PRhiResourceInvalidatedException error) {
             image.close();
             return rhiFailure("texture-view adoption", error);
         }
@@ -138,43 +138,43 @@ public final class Blaze3DBridge262 {
         BridgeCompatibilityAudit audit = minecraftAudit("buffer", "GlBuffer", buffer.handle(), () -> !buffer.isClosed());
         if (!audit.isCompatible()) return unsupported(audit);
         try {
-            RhiBufferCreateInfo info = new RhiBufferCreateInfo(buffer.size(),
+            PRhiBufferCreateInfo info = new PRhiBufferCreateInfo(buffer.size(),
                     BridgeTranslations262.bufferUsage(buffer.usage()), BridgeTranslations262.memoryUsage(buffer.usage()));
-            RhiBuffer adopted = rhiDevice.adoptBuffer(new OpenGlBufferAdoption(
-                    new RhiNativeObject(OpenGlNativeObjectTypes.BUFFER, buffer.handle()), info,
-                    RhiOwnership.BORROWED, rhiContext, rhiToken));
+            PRhiBuffer adopted = rhiDevice.adoptBuffer(new OpenGlBufferAdoption(
+                    new PRhiNativeObject(OpenGlNativeObjectTypes.BUFFER, buffer.handle()), info,
+                    PRhiOwnership.BORROWED, rhiContext, rhiToken));
             return success(new RhiBufferSlice262(adopted, source.offset(), source.length()));
-        } catch (IllegalArgumentException | RhiResourceClosedException | RhiResourceInvalidatedException error) {
+        } catch (IllegalArgumentException | PRhiResourceClosedException | PRhiResourceInvalidatedException error) {
             return drift("buffer metadata/adoption failed: " + error.getMessage());
         }
     }
 
-    public BridgeResult<BridgeLease<RhiShader>> shaderToLumin(GlShaderModule source) {
+    public BridgeResult<BridgeLease<PRhiShader>> shaderToLumin(GlShaderModule source) {
         if (source.getShaderId() <= 0) return state(BridgeUnsupportedReason.CLOSED, "shader is closed or invalid");
         if (!(source instanceof GlShaderModuleAccess262 access)) return drift("GlShaderModuleAccess262 mixin is absent");
         BridgeCompatibilityAudit audit = minecraftAudit("shader-module", "GlShaderModule",
                 source.getShaderId(), () -> source.getShaderId() > 0);
         if (!audit.isCompatible()) return unsupported(audit);
-        RhiShaderStage stage = access.luminGraphics$type262() == ShaderType.VERTEX
-                ? RhiShaderStage.VERTEX : RhiShaderStage.FRAGMENT;
+        PRhiShaderStage stage = access.luminGraphics$type262() == ShaderType.VERTEX
+                ? PRhiShaderStage.VERTEX : PRhiShaderStage.FRAGMENT;
         try {
-            RhiShader adopted = rhiDevice.adoptShader(new RhiShaderDesc(stage, "main", source.getDebugLabel()),
-                    new RhiNativeObject(RhiShaderNativeObjectTypes.OPENGL_SHADER_OBJECT, source.getShaderId()),
-                    RhiOwnership.BORROWED, rhiContext, rhiToken);
+            PRhiShader adopted = rhiDevice.adoptShader(new PRhiShaderDesc(stage, "main", source.getDebugLabel()),
+                    new PRhiNativeObject(PRhiShaderNativeObjectTypes.OPENGL_SHADER_OBJECT, source.getShaderId()),
+                    PRhiOwnership.BORROWED, rhiContext, rhiToken);
             return success(adopted);
-        } catch (RhiInvalidArgumentException | RhiResourceClosedException | RhiResourceInvalidatedException error) {
+        } catch (PRhiInvalidArgumentException | PRhiResourceClosedException | PRhiResourceInvalidatedException error) {
             return rhiFailure("shader adoption", error);
         }
     }
 
-    public BridgeResult<BridgeLease<GlTexture>> textureToMinecraft(RhiImage source, BridgeCapability capability,
+    public BridgeResult<BridgeLease<GlTexture>> textureToMinecraft(PRhiImage source, BridgeCapability capability,
             TextureMetadata262 metadata, FrameBufferCache frameBufferCache) {
-        BridgeCompatibilityAudit audit = capability.audit("texture", "RhiImage", "opengl", bridgeContext);
+        BridgeCompatibilityAudit audit = capability.audit("texture", "PRhiImage", "opengl", bridgeContext);
         if (!audit.isCompatible()) return unsupported(audit);
-        final RhiNativeObject nativeObject;
+        final PRhiNativeObject nativeObject;
         try {
             nativeObject = source.getNativeObject(OpenGlNativeObjectTypes.TEXTURE).orElse(null);
-        } catch (RhiInvalidArgumentException | RhiResourceClosedException | RhiResourceInvalidatedException error) {
+        } catch (PRhiInvalidArgumentException | PRhiResourceClosedException | PRhiResourceInvalidatedException error) {
             return rhiFailure("texture native access", error);
         }
         if (nativeObject == null) return state(BridgeUnsupportedReason.NO_NATIVE_HANDLE, "RHI image has no OpenGL texture");
@@ -195,17 +195,17 @@ public final class Blaze3DBridge262 {
         }
     }
 
-    public BridgeResult<BridgeLease<GlTextureView>> textureViewToMinecraft(RhiImageView source,
+    public BridgeResult<BridgeLease<GlTextureView>> textureViewToMinecraft(PRhiImageView source,
             BridgeCapability capability, GlTexture parent, int baseMipLevel, int mipLevels,
             FrameBufferCache frameBufferCache) {
         if (source == null) return subtype("texture-view", null);
-        BridgeCompatibilityAudit audit = capability.audit("texture", "RhiImageView", "opengl", bridgeContext);
+        BridgeCompatibilityAudit audit = capability.audit("texture", "PRhiImageView", "opengl", bridgeContext);
         if (!audit.isCompatible()) return unsupported(audit);
         if (parent == null) return state(BridgeUnsupportedReason.VIEW_REQUIRES_PARENT, "parent texture is absent");
         if (parent.isClosed()) return state(BridgeUnsupportedReason.VIEW_REQUIRES_PARENT, "parent texture is closed");
-        final RhiNativeObject nativeObject;
+        final PRhiNativeObject nativeObject;
         try {
-            RhiImage image = Objects.requireNonNull(source.image(), "texture view backing image");
+            PRhiImage image = Objects.requireNonNull(source.image(), "texture view backing image");
             if (source.api() != rhiDevice.api() || image.api() != rhiDevice.api()) {
                 return state(BridgeUnsupportedReason.BACKEND_MISMATCH,
                         "texture view and backing image must use the bridge OpenGL backend");
@@ -227,12 +227,12 @@ public final class Blaze3DBridge262 {
                 return state(BridgeUnsupportedReason.TYPE_MISMATCH,
                         "texture view format differs from its backing image");
             }
-        } catch (RhiResourceClosedException | RhiResourceInvalidatedException error) {
+        } catch (PRhiResourceClosedException | PRhiResourceInvalidatedException error) {
             return rhiFailure("texture-view native access", error);
-        } catch (RhiInvalidStateException error) {
+        } catch (PRhiInvalidStateException error) {
             return state(BridgeUnsupportedReason.CONTEXT_MISMATCH,
                     "texture-view native access failed: " + error.getMessage());
-        } catch (RhiInvalidArgumentException error) {
+        } catch (PRhiInvalidArgumentException error) {
             return state(BridgeUnsupportedReason.TYPE_MISMATCH,
                     "texture-view native access failed: " + error.getMessage());
         }
@@ -268,9 +268,9 @@ public final class Blaze3DBridge262 {
         }
     }
 
-    public BridgeResult<BridgeLease<GlBuffer.Direct>> bufferToMinecraft(RhiBuffer source,
+    public BridgeResult<BridgeLease<GlBuffer.Direct>> bufferToMinecraft(PRhiBuffer source,
             BridgeCapability capability, int usage, DirectStateAccess dsa, boolean canPersistentMap) {
-        BridgeCompatibilityAudit audit = capability.audit("buffer", "RhiBuffer", "opengl", bridgeContext);
+        BridgeCompatibilityAudit audit = capability.audit("buffer", "PRhiBuffer", "opengl", bridgeContext);
         if (!audit.isCompatible()) return unsupported(audit);
         try {
             BridgeTranslations262.bufferUsage(usage);
@@ -278,10 +278,10 @@ public final class Blaze3DBridge262 {
         } catch (IllegalArgumentException error) {
             return drift(error.getMessage());
         }
-        final RhiNativeObject nativeObject;
+        final PRhiNativeObject nativeObject;
         try {
             nativeObject = source.getNativeObject(OpenGlNativeObjectTypes.BUFFER).orElse(null);
-        } catch (RhiInvalidArgumentException | RhiResourceClosedException | RhiResourceInvalidatedException error) {
+        } catch (PRhiInvalidArgumentException | PRhiResourceClosedException | PRhiResourceInvalidatedException error) {
             return rhiFailure("buffer native access", error);
         }
         if (nativeObject == null) return state(BridgeUnsupportedReason.NO_NATIVE_HANDLE, "RHI buffer has no OpenGL buffer");
@@ -298,22 +298,22 @@ public final class Blaze3DBridge262 {
         }
     }
 
-    public BridgeResult<BridgeLease<GlShaderModule>> shaderToMinecraft(RhiShader source,
+    public BridgeResult<BridgeLease<GlShaderModule>> shaderToMinecraft(PRhiShader source,
             BridgeCapability capability, Identifier id) {
-        BridgeCompatibilityAudit audit = capability.audit("shader-module", "RhiShader", "opengl", bridgeContext);
+        BridgeCompatibilityAudit audit = capability.audit("shader-module", "PRhiShader", "opengl", bridgeContext);
         if (!audit.isCompatible()) return unsupported(audit);
-        final RhiNativeObject nativeObject;
+        final PRhiNativeObject nativeObject;
         try {
-            nativeObject = source.getNativeObject(RhiShaderNativeObjectTypes.OPENGL_SHADER_OBJECT).orElse(null);
-        } catch (RhiInvalidArgumentException | RhiResourceClosedException | RhiResourceInvalidatedException error) {
+            nativeObject = source.getNativeObject(PRhiShaderNativeObjectTypes.OPENGL_SHADER_OBJECT).orElse(null);
+        } catch (PRhiInvalidArgumentException | PRhiResourceClosedException | PRhiResourceInvalidatedException error) {
             return rhiFailure("shader native access", error);
         }
         if (nativeObject == null) return state(BridgeUnsupportedReason.NO_NATIVE_HANDLE, "RHI shader has no OpenGL shader object");
-        if (source.desc().stage() == RhiShaderStage.COMPUTE) {
+        if (source.desc().stage() == PRhiShaderStage.COMPUTE) {
             return state(BridgeUnsupportedReason.TYPE_MISMATCH,
                     "Minecraft 26.2 has no compute GlShaderModule role");
         }
-        ShaderType type = source.desc().stage() == RhiShaderStage.VERTEX ? ShaderType.VERTEX : ShaderType.FRAGMENT;
+        ShaderType type = source.desc().stage() == PRhiShaderStage.VERTEX ? ShaderType.VERTEX : ShaderType.FRAGMENT;
         final int handle;
         try {
             handle = Math.toIntExact(nativeObject.value());
@@ -327,12 +327,12 @@ public final class Blaze3DBridge262 {
         }
     }
 
-    public BridgeResult<BridgeLease<RhiSampler>> samplerToLumin(GpuSampler source) {
+    public BridgeResult<BridgeLease<PRhiSampler>> samplerToLumin(GpuSampler source) {
         return owned(() -> rhiDevice.createSampler(BridgeTranslations262.sampler(source)));
     }
 
-    public BridgeResult<BridgeLease<GpuSampler>> samplerToMinecraft(RhiSampler source,
-            Function<RhiSampler, GpuSampler> rebuilder) {
+    public BridgeResult<BridgeLease<GpuSampler>> samplerToMinecraft(PRhiSampler source,
+            Function<PRhiSampler, GpuSampler> rebuilder) {
         try {
             GpuSampler value = Objects.requireNonNull(rebuilder.apply(source), "rebuilder returned null");
             return BridgeResult.success(BridgeLease.owned(value, bridgeContext, bridgeToken,
@@ -342,13 +342,13 @@ public final class Blaze3DBridge262 {
         }
     }
 
-    public BridgeResult<BridgeLease<RhiGraphicsPipeline>> pipelineToLumin(RenderPipeline source,
-            Function<PipelineMetadata262, RhiGraphicsPipeline> rebuilder) {
+    public BridgeResult<BridgeLease<PRhiGraphicsPipeline>> pipelineToLumin(RenderPipeline source,
+            Function<PipelineMetadata262, PRhiGraphicsPipeline> rebuilder) {
         return owned(() -> rebuilder.apply(PipelineMetadata262.from(source)));
     }
 
-    public BridgeResult<BridgeLease<RenderPipeline>> pipelineToMinecraft(RhiGraphicsPipeline source,
-            Function<RhiGraphicsPipeline, RenderPipeline> rebuilder) {
+    public BridgeResult<BridgeLease<RenderPipeline>> pipelineToMinecraft(PRhiGraphicsPipeline source,
+            Function<PRhiGraphicsPipeline, RenderPipeline> rebuilder) {
         try {
             RenderPipeline value = Objects.requireNonNull(rebuilder.apply(source), "rebuilder returned null");
             return BridgeResult.success(BridgeLease.owned(value, bridgeContext, bridgeToken,
@@ -434,10 +434,10 @@ public final class Blaze3DBridge262 {
     }
 
     private static <T> BridgeResult<T> rhiFailure(String operation, RuntimeException error) {
-        if (error instanceof RhiResourceClosedException) {
+        if (error instanceof PRhiResourceClosedException) {
             return state(BridgeUnsupportedReason.CLOSED, operation + " failed: " + error.getMessage());
         }
-        if (error instanceof RhiResourceInvalidatedException) {
+        if (error instanceof PRhiResourceInvalidatedException) {
             return state(BridgeUnsupportedReason.TOKEN_INVALIDATED, operation + " failed: " + error.getMessage());
         }
         return state(BridgeUnsupportedReason.TYPE_MISMATCH, operation + " failed: " + error.getMessage());
@@ -448,7 +448,7 @@ public final class Blaze3DBridge262 {
                 message == null || message.isBlank() ? "bridge operation failed" : message));
     }
 
-    public record RhiTextureView262(RhiImage image, RhiImageView view) implements AutoCloseable {
+    public record RhiTextureView262(PRhiImage image, PRhiImageView view) implements AutoCloseable {
         public RhiTextureView262 { Objects.requireNonNull(image); Objects.requireNonNull(view); }
         @Override public void close() {
             try {
@@ -459,7 +459,7 @@ public final class Blaze3DBridge262 {
         }
     }
 
-    public record RhiBufferSlice262(RhiBuffer buffer, long offset, long length) {
+    public record RhiBufferSlice262(PRhiBuffer buffer, long offset, long length) {
         public RhiBufferSlice262 {
             Objects.requireNonNull(buffer);
             if (offset < 0 || length < 0 || offset + length > buffer.size()) {
@@ -473,7 +473,7 @@ public final class Blaze3DBridge262 {
             Objects.requireNonNull(label, "label");
             if (mipLevels <= 0) throw new IllegalArgumentException("mipLevels must be positive");
         }
-        boolean matches(RhiImage image) {
+        boolean matches(PRhiImage image) {
             try {
                 BridgeTranslations262.imageUsage(usage, BridgeTranslations262.format(image.format()));
                 return image.extent().width() > 0 && image.extent().height() > 0 && image.extent().depth() > 0;

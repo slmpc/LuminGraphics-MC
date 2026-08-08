@@ -1,6 +1,6 @@
 package com.github.slmpc.lumingraphics.mc.v262.bridge;
 
-import com.github.slmpc.prismrhi.backend.RhiGlStateBridge;
+import com.github.slmpc.prismrhi.backend.PRhiGlStateBridge;
 import com.mojang.blaze3d.opengl.GlStateManager;
 
 import static org.lwjgl.opengl.GL11.GL_BLEND;
@@ -19,7 +19,7 @@ import static org.lwjgl.opengl.GL33.glBindSampler;
 import static org.lwjgl.opengl.GL33.glDeleteVertexArrays;
 import static org.lwjgl.opengl.GL33.glVertexAttribDivisor;
 
-public final class GlStateManagerBridge262 implements RhiGlStateBridge {
+public final class GlStateManagerBridge262 implements PRhiGlStateBridge {
     public static final GlStateManagerBridge262 INSTANCE = new GlStateManagerBridge262();
 
     private GlStateManagerBridge262() {

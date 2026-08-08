@@ -5,12 +5,12 @@ import com.github.slmpc.lumingraphics.render.resource.RenderResources;
 import com.github.slmpc.lumingraphics.render.scheduler.Render2DTexture;
 import com.github.slmpc.lumingraphics.render.shader.BlurShader;
 import com.github.slmpc.lumingraphics.render.shader.FullscreenEffect;
-import com.github.slmpc.prismrhi.resource.RhiFilter;
-import com.github.slmpc.prismrhi.resource.RhiImage;
-import com.github.slmpc.prismrhi.resource.RhiImageView;
-import com.github.slmpc.prismrhi.resource.RhiSampler;
-import com.github.slmpc.prismrhi.resource.RhiSamplerAddressMode;
-import com.github.slmpc.prismrhi.resource.RhiSamplerCreateInfo;
+import com.github.slmpc.prismrhi.resource.PRhiFilter;
+import com.github.slmpc.prismrhi.resource.PRhiImage;
+import com.github.slmpc.prismrhi.resource.PRhiImageView;
+import com.github.slmpc.prismrhi.resource.PRhiSampler;
+import com.github.slmpc.prismrhi.resource.PRhiSamplerAddressMode;
+import com.github.slmpc.prismrhi.resource.PRhiSamplerCreateInfo;
 import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
@@ -27,7 +27,7 @@ final class MinecraftBlurService2612 implements AutoCloseable {
     private final Minecraft client;
     private final MinecraftGraphicsRuntime2612 graphics;
     private final MinecraftBlurResources2612 resources;
-    private final RhiSampler sampler;
+    private final PRhiSampler sampler;
     private final Map<GlTextureView, BorrowedView> views = new IdentityHashMap<>();
     private final List<BorrowedView> retiredViews = new ArrayList<>();
     private final List<RetiredEffect> effects = new ArrayList<>();
@@ -39,10 +39,10 @@ final class MinecraftBlurService2612 implements AutoCloseable {
         this.client = Objects.requireNonNull(client, "client");
         this.graphics = Objects.requireNonNull(graphics, "graphics");
         resources = new MinecraftBlurResources2612(renderResources);
-        sampler = resources.device().createSampler(new RhiSamplerCreateInfo(
-                RhiFilter.LINEAR, RhiFilter.LINEAR,
-                RhiSamplerAddressMode.CLAMP_TO_EDGE, RhiSamplerAddressMode.CLAMP_TO_EDGE,
-                RhiSamplerAddressMode.CLAMP_TO_EDGE, 0.0f));
+        sampler = resources.device().createSampler(new PRhiSamplerCreateInfo(
+                PRhiFilter.LINEAR, PRhiFilter.LINEAR,
+                PRhiSamplerAddressMode.CLAMP_TO_EDGE, PRhiSamplerAddressMode.CLAMP_TO_EDGE,
+                PRhiSamplerAddressMode.CLAMP_TO_EDGE, 0.0f));
     }
 
     void apply(RenderExecution base, MinecraftBlurRegion2612 region) {
@@ -98,7 +98,7 @@ final class MinecraftBlurService2612 implements AutoCloseable {
             existing.lastUsedFrameId = frameId;
             return existing;
         }
-        RhiImageView view = graphics.blazeBridge().fromBlazeTextureView(blazeView).orElseThrow();
+        PRhiImageView view = graphics.blazeBridge().fromBlazeTextureView(blazeView).orElseThrow();
         BorrowedView borrowed = new BorrowedView(view);
         borrowed.lastUsedFrameId = frameId;
         views.put(blazeView, borrowed);
@@ -168,12 +168,12 @@ final class MinecraftBlurService2612 implements AutoCloseable {
     }
 
     private static final class BorrowedView implements AutoCloseable {
-        private final RhiImageView view;
-        private final RhiImage image;
+        private final PRhiImageView view;
+        private final PRhiImage image;
         private long lastUsedFrameId;
         private boolean closed;
 
-        private BorrowedView(RhiImageView view) {
+        private BorrowedView(PRhiImageView view) {
             this.view = view;
             image = view.image();
         }

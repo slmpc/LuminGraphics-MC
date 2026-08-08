@@ -6,23 +6,23 @@ import com.github.slmpc.lumingraphics.mc.v2612.text.MinecraftFontAdapter2612;
 import com.github.slmpc.lumingraphics.text.atlas.AtlasPixels;
 import com.github.slmpc.lumingraphics.text.atlas.GlyphAtlasUpload;
 import com.github.slmpc.lumingraphics.text.atlas.GlyphAtlasUploader;
-import com.github.slmpc.prismrhi.barrier.RhiImageBarrier;
-import com.github.slmpc.prismrhi.barrier.RhiPipelineBarrier;
-import com.github.slmpc.prismrhi.barrier.RhiResourceState;
-import com.github.slmpc.prismrhi.descriptor.RhiDescriptorSet;
-import com.github.slmpc.prismrhi.format.RhiExtent3D;
-import com.github.slmpc.prismrhi.format.RhiFormat;
-import com.github.slmpc.prismrhi.resource.RhiBuffer;
-import com.github.slmpc.prismrhi.resource.RhiBufferCreateInfo;
-import com.github.slmpc.prismrhi.resource.RhiBufferUsage;
-import com.github.slmpc.prismrhi.resource.RhiImage;
-import com.github.slmpc.prismrhi.resource.RhiImageCreateInfo;
-import com.github.slmpc.prismrhi.resource.RhiImageUsage;
-import com.github.slmpc.prismrhi.resource.RhiImageView;
-import com.github.slmpc.prismrhi.resource.RhiImageViewCreateInfo;
-import com.github.slmpc.prismrhi.resource.RhiMemoryUsage;
-import com.github.slmpc.prismrhi.resource.RhiSampler;
-import com.github.slmpc.prismrhi.resource.RhiSamplerCreateInfo;
+import com.github.slmpc.prismrhi.barrier.PRhiImageBarrier;
+import com.github.slmpc.prismrhi.barrier.PRhiPipelineBarrier;
+import com.github.slmpc.prismrhi.barrier.PRhiResourceState;
+import com.github.slmpc.prismrhi.descriptor.PRhiDescriptorSet;
+import com.github.slmpc.prismrhi.format.PRhiExtent3D;
+import com.github.slmpc.prismrhi.format.PRhiFormat;
+import com.github.slmpc.prismrhi.resource.PRhiBuffer;
+import com.github.slmpc.prismrhi.resource.PRhiBufferCreateInfo;
+import com.github.slmpc.prismrhi.resource.PRhiBufferUsage;
+import com.github.slmpc.prismrhi.resource.PRhiImage;
+import com.github.slmpc.prismrhi.resource.PRhiImageCreateInfo;
+import com.github.slmpc.prismrhi.resource.PRhiImageUsage;
+import com.github.slmpc.prismrhi.resource.PRhiImageView;
+import com.github.slmpc.prismrhi.resource.PRhiImageViewCreateInfo;
+import com.github.slmpc.prismrhi.resource.PRhiMemoryUsage;
+import com.github.slmpc.prismrhi.resource.PRhiSampler;
+import com.github.slmpc.prismrhi.resource.PRhiSamplerCreateInfo;
 import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
@@ -51,11 +51,11 @@ final class MinecraftGlyphAtlasUploader2612 implements GlyphAtlasUploader, AutoC
     public synchronized GlyphAtlasUpload upload(AtlasPixels pixels) {
         if (closed) throw new IllegalStateException("Minecraft glyph atlas uploader is closed");
         runtime.luminContext().requireRenderThread();
-        RhiBuffer staging = null;
-        RhiImage image = null;
-        RhiImageView view = null;
-        RhiSampler sampler = null;
-        RhiDescriptorSet descriptor = null;
+        PRhiBuffer staging = null;
+        PRhiImage image = null;
+        PRhiImageView view = null;
+        PRhiSampler sampler = null;
+        PRhiDescriptorSet descriptor = null;
         GlTextureView minecraftView = null;
         Identifier minecraftId = Identifier.fromNamespaceAndPath("lumin_graphics_mc",
                 "glyph-atlas/" + NEXT_ID.incrementAndGet());
@@ -64,27 +64,27 @@ final class MinecraftGlyphAtlasUploader2612 implements GlyphAtlasUploader, AutoC
                 minecraftId.toString());
         try {
             byte[] data = pixels.data();
-            RhiFormat format = switch (pixels.format()) {
-                case ALPHA8 -> RhiFormat.R8_UNORM;
-                case RGBA8 -> RhiFormat.RGBA8_UNORM;
+            PRhiFormat format = switch (pixels.format()) {
+                case ALPHA8 -> PRhiFormat.R8_UNORM;
+                case RGBA8 -> PRhiFormat.RGBA8_UNORM;
             };
-            staging = runtime.device().createBuffer(RhiBufferCreateInfo.builder(data.length)
-                    .usage(RhiBufferUsage.TRANSFER_SRC).memoryUsage(RhiMemoryUsage.CPU_TO_GPU).build());
+            staging = runtime.device().createBuffer(PRhiBufferCreateInfo.builder(data.length)
+                    .usage(PRhiBufferUsage.TRANSFER_SRC).memoryUsage(PRhiMemoryUsage.CPU_TO_GPU).build());
             staging.write(stagingBytes(data));
-            image = runtime.device().createImage(RhiImageCreateInfo.builder(
-                            RhiExtent3D.of2D(pixels.width(), pixels.height()))
-                    .format(format).usage(RhiImageUsage.TRANSFER_DST).usage(RhiImageUsage.SAMPLED).build());
-            view = runtime.device().createImageView(RhiImageViewCreateInfo.of(image));
-            sampler = runtime.device().createSampler(RhiSamplerCreateInfo.linearRepeat());
+            image = runtime.device().createImage(PRhiImageCreateInfo.builder(
+                            PRhiExtent3D.of2D(pixels.width(), pixels.height()))
+                    .format(format).usage(PRhiImageUsage.TRANSFER_DST).usage(PRhiImageUsage.SAMPLED).build());
+            view = runtime.device().createImageView(PRhiImageViewCreateInfo.of(image));
+            sampler = runtime.device().createSampler(PRhiSamplerCreateInfo.linearRepeat());
             minecraftView = runtime.blazeBridge().toBlazeTextureView(view, 0, 1,
                     "lumin-graphics-mc-glyph-atlas").orElseThrow();
             descriptor = resources.createTextureDescriptor(view, sampler);
             resources.registerTextureDescriptor(texture, descriptor, runtime.device().contextIdentity());
-            runtime.commandBuffer().pipelineBarrier(RhiPipelineBarrier.builder().image(RhiImageBarrier.of(
-                    image, RhiResourceState.UNDEFINED, RhiResourceState.TRANSFER_DST)).build());
+            runtime.commandBuffer().pipelineBarrier(PRhiPipelineBarrier.builder().image(PRhiImageBarrier.of(
+                    image, PRhiResourceState.UNDEFINED, PRhiResourceState.TRANSFER_DST)).build());
             runtime.commandBuffer().copyBufferToImage(staging, image);
-            runtime.commandBuffer().pipelineBarrier(RhiPipelineBarrier.builder().image(RhiImageBarrier.of(
-                    image, RhiResourceState.TRANSFER_DST, RhiResourceState.SAMPLED_IMAGE)).build());
+            runtime.commandBuffer().pipelineBarrier(PRhiPipelineBarrier.builder().image(PRhiImageBarrier.of(
+                    image, PRhiResourceState.TRANSFER_DST, PRhiResourceState.SAMPLED_IMAGE)).build());
             // staging 只服务本帧上传，submit 执行完 copy 后即可释放，无需跟随整张 atlas 的寿命。
             runtime.retireAfterFrame(staging);
             staging = null;
@@ -92,10 +92,10 @@ final class MinecraftGlyphAtlasUploader2612 implements GlyphAtlasUploader, AutoC
             client.getTextureManager().register(minecraftId, new BorrowedGlyphAtlasTexture2612(
                     minecraftView.texture(), minecraftView, minecraftSampler));
             minecraftRegistered = true;
-            RhiImage ownedImage = image;
-            RhiImageView ownedView = view;
-            RhiSampler ownedSampler = sampler;
-            RhiDescriptorSet ownedDescriptor = descriptor;
+            PRhiImage ownedImage = image;
+            PRhiImageView ownedView = view;
+            PRhiSampler ownedSampler = sampler;
+            PRhiDescriptorSet ownedDescriptor = descriptor;
             GlTextureView ownedMinecraftView = minecraftView;
             return new GlyphAtlasUpload(new MinecraftGlyphAtlasTexture2612(
                     texture, minecraftView, minecraftId, minecraftSampler), () -> {

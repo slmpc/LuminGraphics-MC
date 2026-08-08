@@ -17,7 +17,7 @@ import com.github.slmpc.lumingraphics.ui.scene.UiScene;
 import com.github.slmpc.lumingraphics.ui.theme.UiTheme;
 import com.github.slmpc.lumingraphics.ui.text.UiTextMetrics;
 import com.github.slmpc.lumingraphics.ui.tree.UiTree;
-import com.github.slmpc.prismrhi.format.RhiFormat;
+import com.github.slmpc.prismrhi.format.PRhiFormat;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -301,7 +301,7 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
         if (renderResources != null) return;
         if (!graphics.frameActive()) throw new IllegalStateException("No Minecraft graphics frame is active");
         var target = graphics.currentRenderTarget();
-        RhiFormat depth = target.depthView().map(view -> view.format()).orElse(RhiFormat.UNDEFINED);
+        PRhiFormat depth = target.depthView().map(view -> view.format()).orElse(PRhiFormat.UNDEFINED);
         renderResources = new DefaultRenderResources(graphics.device(), target.colorView().format(), depth);
         try {
             uiResources = new MinecraftUiResources2612(client, graphics, renderResources, config);

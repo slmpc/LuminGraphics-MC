@@ -10,29 +10,29 @@ import com.github.slmpc.prismrhi.backend.opengl.OpenGlNativeObjectTypes;
 import com.github.slmpc.prismrhi.backend.opengl.OpenGlShaderAdoption;
 import com.github.slmpc.prismrhi.backend.opengl41.Gl41BackendProvider;
 import com.github.slmpc.prismrhi.backend.opengl46.Gl46BackendProvider;
-import com.github.slmpc.prismrhi.device.RhiDeviceCreateInfo;
-import com.github.slmpc.prismrhi.format.RhiExtent3D;
-import com.github.slmpc.prismrhi.format.RhiFormat;
-import com.github.slmpc.prismrhi.instance.RhiInstance;
-import com.github.slmpc.prismrhi.instance.RhiInstanceCreateInfo;
-import com.github.slmpc.prismrhi.pipeline.RhiGraphicsPipeline;
-import com.github.slmpc.prismrhi.pipeline.RhiGraphicsPipelineCreateInfo;
-import com.github.slmpc.prismrhi.resource.RhiBuffer;
-import com.github.slmpc.prismrhi.resource.RhiBufferCreateInfo;
-import com.github.slmpc.prismrhi.resource.RhiBufferUsage;
-import com.github.slmpc.prismrhi.resource.RhiImage;
-import com.github.slmpc.prismrhi.resource.RhiImageCreateInfo;
-import com.github.slmpc.prismrhi.resource.RhiImageUsage;
-import com.github.slmpc.prismrhi.resource.RhiMemoryUsage;
-import com.github.slmpc.prismrhi.resource.RhiNativeObject;
-import com.github.slmpc.prismrhi.resource.RhiNativeObjects;
-import com.github.slmpc.prismrhi.resource.RhiOwnership;
-import com.github.slmpc.prismrhi.resource.RhiSampler;
-import com.github.slmpc.prismrhi.resource.RhiSamplerCreateInfo;
-import com.github.slmpc.prismrhi.shader.RhiShader;
-import com.github.slmpc.prismrhi.shader.RhiShaderBinaryFormat;
-import com.github.slmpc.prismrhi.shader.RhiShaderDesc;
-import com.github.slmpc.prismrhi.shader.RhiShaderStage;
+import com.github.slmpc.prismrhi.device.PRhiDeviceCreateInfo;
+import com.github.slmpc.prismrhi.format.PRhiExtent3D;
+import com.github.slmpc.prismrhi.format.PRhiFormat;
+import com.github.slmpc.prismrhi.instance.PRhiInstance;
+import com.github.slmpc.prismrhi.instance.PRhiInstanceCreateInfo;
+import com.github.slmpc.prismrhi.pipeline.PRhiGraphicsPipeline;
+import com.github.slmpc.prismrhi.pipeline.PRhiGraphicsPipelineCreateInfo;
+import com.github.slmpc.prismrhi.resource.PRhiBuffer;
+import com.github.slmpc.prismrhi.resource.PRhiBufferCreateInfo;
+import com.github.slmpc.prismrhi.resource.PRhiBufferUsage;
+import com.github.slmpc.prismrhi.resource.PRhiImage;
+import com.github.slmpc.prismrhi.resource.PRhiImageCreateInfo;
+import com.github.slmpc.prismrhi.resource.PRhiImageUsage;
+import com.github.slmpc.prismrhi.resource.PRhiMemoryUsage;
+import com.github.slmpc.prismrhi.resource.PRhiNativeObject;
+import com.github.slmpc.prismrhi.resource.PRhiNativeObjects;
+import com.github.slmpc.prismrhi.resource.PRhiOwnership;
+import com.github.slmpc.prismrhi.resource.PRhiSampler;
+import com.github.slmpc.prismrhi.resource.PRhiSamplerCreateInfo;
+import com.github.slmpc.prismrhi.shader.PRhiShader;
+import com.github.slmpc.prismrhi.shader.PRhiShaderBinaryFormat;
+import com.github.slmpc.prismrhi.shader.PRhiShaderDesc;
+import com.github.slmpc.prismrhi.shader.PRhiShaderStage;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.opengl.GlBuffer;
 import com.mojang.blaze3d.opengl.GlShaderModule;
@@ -95,11 +95,11 @@ public final class RealClientBridgeSmoke2612 {
             throws Exception {
         RenderSystem.assertOnRenderThread();
         context.requireCurrent();
-        RhiInstance instance = PrismRHI.createInstance(
+        PRhiInstance instance = PrismRHI.createInstance(
                 isMacOs() ? new Gl41BackendProvider(context) : new Gl46BackendProvider(context),
-                RhiInstanceCreateInfo.builder().build());
+                PRhiInstanceCreateInfo.builder().build());
         OpenGlExternalDevice prism = (OpenGlExternalDevice) instance.createDevice(
-                instance.enumeratePhysicalDevices().getFirst(), RhiDeviceCreateInfo.builder()
+                instance.enumeratePhysicalDevices().getFirst(), PRhiDeviceCreateInfo.builder()
                         .glStateBridge(GlStateManagerBridge2612.INSTANCE).build());
         Blaze3DBridge2612 bridge = new Blaze3DBridge2612(prism);
 
@@ -112,23 +112,23 @@ public final class RealClientBridgeSmoke2612 {
         int blazeBufferId = ((GlAccess2612.Buffer) (GlBuffer) blazeBuffer).lumin$handle();
         int blazeShaderId = blazeShader.getShaderId();
 
-        RhiImage fromBlazeTexture = bridge.fromBlazeTexture(blazeTexture).orElseThrow();
-        RhiBuffer fromBlazeBuffer = bridge.fromBlazeBuffer(blazeBuffer).orElseThrow();
-        RhiShader fromBlazeShader = bridge.fromBlazeShader(blazeShader).orElseThrow();
-        require(RhiNativeObjects.requireValue(fromBlazeTexture, OpenGlNativeObjectTypes.TEXTURE) == blazeTextureId, "Blaze texture identity");
-        require(RhiNativeObjects.requireValue(fromBlazeBuffer, OpenGlNativeObjectTypes.BUFFER) == blazeBufferId, "Blaze buffer identity");
-        require(RhiNativeObjects.requireValue(fromBlazeShader, OpenGlNativeObjectTypes.SHADER) == blazeShaderId, "Blaze shader identity");
+        PRhiImage fromBlazeTexture = bridge.fromBlazeTexture(blazeTexture).orElseThrow();
+        PRhiBuffer fromBlazeBuffer = bridge.fromBlazeBuffer(blazeBuffer).orElseThrow();
+        PRhiShader fromBlazeShader = bridge.fromBlazeShader(blazeShader).orElseThrow();
+        require(PRhiNativeObjects.requireValue(fromBlazeTexture, OpenGlNativeObjectTypes.TEXTURE) == blazeTextureId, "Blaze texture identity");
+        require(PRhiNativeObjects.requireValue(fromBlazeBuffer, OpenGlNativeObjectTypes.BUFFER) == blazeBufferId, "Blaze buffer identity");
+        require(PRhiNativeObjects.requireValue(fromBlazeShader, OpenGlNativeObjectTypes.SHADER) == blazeShaderId, "Blaze shader identity");
 
-        RhiImage prismTexture = prism.createImage(new RhiImageCreateInfo(new RhiExtent3D(8, 8, 1), RhiFormat.RGBA8_UNORM,
-                Set.of(RhiImageUsage.SAMPLED, RhiImageUsage.COLOR_ATTACHMENT), RhiMemoryUsage.GPU_ONLY));
-        RhiBuffer prismBuffer = prism.createBuffer(new RhiBufferCreateInfo(64, Set.of(RhiBufferUsage.VERTEX_BUFFER), RhiMemoryUsage.GPU_ONLY));
-        RhiShader prismShader = adoptShader(prism, context, GL20.GL_VERTEX_SHADER, RhiShaderStage.VERTEX,
+        PRhiImage prismTexture = prism.createImage(new PRhiImageCreateInfo(new PRhiExtent3D(8, 8, 1), PRhiFormat.RGBA8_UNORM,
+                Set.of(PRhiImageUsage.SAMPLED, PRhiImageUsage.COLOR_ATTACHMENT), PRhiMemoryUsage.GPU_ONLY));
+        PRhiBuffer prismBuffer = prism.createBuffer(new PRhiBufferCreateInfo(64, Set.of(PRhiBufferUsage.VERTEX_BUFFER), PRhiMemoryUsage.GPU_ONLY));
+        PRhiShader prismShader = adoptShader(prism, context, GL20.GL_VERTEX_SHADER, PRhiShaderStage.VERTEX,
                 "lumin-smoke-prism-vertex", "#version 410 core\nvoid main(){gl_Position=vec4(0.0);}");
-        RhiShader prismFragment = adoptShader(prism, context, GL20.GL_FRAGMENT_SHADER, RhiShaderStage.FRAGMENT,
+        PRhiShader prismFragment = adoptShader(prism, context, GL20.GL_FRAGMENT_SHADER, PRhiShaderStage.FRAGMENT,
                 "lumin-smoke-prism-fragment", "#version 410 core\nout vec4 color;void main(){color=vec4(1.0);}");
-        int prismTextureId = Math.toIntExact(RhiNativeObjects.requireValue(prismTexture, OpenGlNativeObjectTypes.TEXTURE));
-        int prismBufferId = Math.toIntExact(RhiNativeObjects.requireValue(prismBuffer, OpenGlNativeObjectTypes.BUFFER));
-        int prismShaderId = Math.toIntExact(RhiNativeObjects.requireValue(prismShader, OpenGlNativeObjectTypes.SHADER));
+        int prismTextureId = Math.toIntExact(PRhiNativeObjects.requireValue(prismTexture, OpenGlNativeObjectTypes.TEXTURE));
+        int prismBufferId = Math.toIntExact(PRhiNativeObjects.requireValue(prismBuffer, OpenGlNativeObjectTypes.BUFFER));
+        int prismShaderId = Math.toIntExact(PRhiNativeObjects.requireValue(prismShader, OpenGlNativeObjectTypes.SHADER));
         GpuTexture toBlazeTexture = bridge.toBlazeTexture(prismTexture, 1, "lumin-smoke-prism").orElseThrow();
         GpuBuffer toBlazeBuffer = bridge.toBlazeBuffer(prismBuffer, GpuBuffer.USAGE_VERTEX).orElseThrow();
         GlShaderModule toBlazeShader = bridge.toBlazeShader(prismShader).orElseThrow();
@@ -138,18 +138,18 @@ public final class RealClientBridgeSmoke2612 {
 
         GpuSampler blazeSampler = RenderSystem.getDevice().createSampler(AddressMode.REPEAT, AddressMode.REPEAT,
                 FilterMode.LINEAR, FilterMode.LINEAR, 1, java.util.OptionalDouble.empty());
-        RhiSampler rhiSampler = bridge.fromBlazeSampler(blazeSampler).orElseThrow();
-        GpuSampler rebuiltSampler = bridge.toBlazeSampler(rhiSampler, RhiSamplerCreateInfo.linearRepeat()).orElseThrow();
+        PRhiSampler rhiSampler = bridge.fromBlazeSampler(blazeSampler).orElseThrow();
+        GpuSampler rebuiltSampler = bridge.toBlazeSampler(rhiSampler, PRhiSamplerCreateInfo.linearRepeat()).orElseThrow();
         RenderPipeline minecraftPipeline = smokePipeline();
-        RhiGraphicsPipeline rebuiltPipeline = bridge.rebuildPipeline(minecraftPipeline, (source, metadata) ->
-                prism.createGraphicsPipeline(RhiGraphicsPipelineCreateInfo.builder()
-                        .shader(RhiShaderStage.VERTEX, prismShader)
-                        .shader(RhiShaderStage.FRAGMENT, prismFragment)
+        PRhiGraphicsPipeline rebuiltPipeline = bridge.rebuildPipeline(minecraftPipeline, (source, metadata) ->
+                prism.createGraphicsPipeline(PRhiGraphicsPipelineCreateInfo.builder()
+                        .shader(PRhiShaderStage.VERTEX, prismShader)
+                        .shader(PRhiShaderStage.FRAGMENT, prismFragment)
                         .build())).orElseThrow();
         require(bridge.rebuildPipeline(rebuiltPipeline, ignored -> minecraftPipeline).orElseThrow() == minecraftPipeline,
                 "pipeline reverse rebuild");
         int pipelineId = Math.toIntExact(
-                RhiNativeObjects.requireValue(rebuiltPipeline, OpenGlNativeObjectTypes.PROGRAM));
+                PRhiNativeObjects.requireValue(rebuiltPipeline, OpenGlNativeObjectTypes.PROGRAM));
         require(GL20.glIsProgram(pipelineId), "pipeline rebuild did not create an OpenGL program");
         var encoder = RenderSystem.getDevice().createCommandEncoder();
         var mainView = client.getMainRenderTarget().getColorTextureView();
@@ -196,15 +196,15 @@ public final class RealClientBridgeSmoke2612 {
         String expected;
         String observed;
         if ("wrong-thread".equals(mode)) {
-            expected = "RhiInvalidStateException";
+            expected = "PRhiInvalidStateException";
             Throwable[] failure = new Throwable[1];
             Thread thread = new Thread(() -> { try { context.requireCurrent(); } catch (Throwable error) { failure[0] = error; } }, "smoke-wrong-thread");
             thread.start();
             try { thread.join(); } catch (InterruptedException error) { Thread.currentThread().interrupt(); throw new IllegalStateException(error); }
             observed = failure[0] == null ? "none" : failure[0].getClass().getSimpleName();
         } else if ("stale-token".equals(mode)) {
-            expected = "RhiResourceInvalidatedException";
-            var token = new com.github.slmpc.prismrhi.context.RhiInvalidationToken(); token.invalidate();
+            expected = "PRhiResourceInvalidatedException";
+            var token = new com.github.slmpc.prismrhi.context.PRhiInvalidationToken(); token.invalidate();
             try { token.requireValid(); observed = "none"; } catch (Throwable error) { observed = error.getClass().getSimpleName(); }
         } else {
             expected = "IllegalArgumentException";
@@ -224,14 +224,14 @@ public final class RealClientBridgeSmoke2612 {
         return GlAccess2612.Shader.create(id, Identifier.fromNamespaceAndPath("lumin_graphics_mc", "smoke/vertex"), ShaderType.VERTEX);
     }
 
-    private static RhiShader adoptShader(OpenGlExternalDevice device, OpenGlExternalContext context, int type,
-                                         RhiShaderStage stage, String label, String source) {
+    private static PRhiShader adoptShader(OpenGlExternalDevice device, OpenGlExternalContext context, int type,
+                                         PRhiShaderStage stage, String label, String source) {
         int id = GL20.glCreateShader(type);
         GL20.glShaderSource(id, source);
         GL20.glCompileShader(id);
         require(GL20.glGetShaderi(id, GL20.GL_COMPILE_STATUS) == GL11.GL_TRUE, GL20.glGetShaderInfoLog(id));
-        return device.adoptShader(new OpenGlShaderAdoption(new RhiShaderDesc(stage, "main", label),
-                new RhiNativeObject(OpenGlNativeObjectTypes.SHADER, id), RhiOwnership.OWNED,
+        return device.adoptShader(new OpenGlShaderAdoption(new PRhiShaderDesc(stage, "main", label),
+                new PRhiNativeObject(OpenGlNativeObjectTypes.SHADER, id), PRhiOwnership.OWNED,
                 context.contextIdentity(), context.invalidation()));
     }
 

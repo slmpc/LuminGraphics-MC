@@ -7,23 +7,23 @@ import com.github.slmpc.lumingraphics.render.scheduler.Render2DTexture;
 import com.github.slmpc.lumingraphics.render.shader.FullscreenEffectBinding;
 import com.github.slmpc.lumingraphics.render.shader.FullscreenEffectPass;
 import com.github.slmpc.lumingraphics.render.shader.FullscreenEffectRequest;
-import com.github.slmpc.prismrhi.descriptor.RhiDescriptorSet;
-import com.github.slmpc.prismrhi.descriptor.RhiDescriptorSetAllocateInfo;
-import com.github.slmpc.prismrhi.descriptor.RhiDescriptorSetLayout;
-import com.github.slmpc.prismrhi.descriptor.RhiDescriptorSetLayoutCreateInfo;
-import com.github.slmpc.prismrhi.descriptor.RhiDescriptorStage;
-import com.github.slmpc.prismrhi.descriptor.RhiDescriptorType;
-import com.github.slmpc.prismrhi.device.RhiDevice;
-import com.github.slmpc.prismrhi.pipeline.RhiGraphicsPipeline;
-import com.github.slmpc.prismrhi.rendering.RhiRect2D;
-import com.github.slmpc.prismrhi.rendering.RhiRenderingAttachment;
-import com.github.slmpc.prismrhi.rendering.RhiRenderingInfo;
-import com.github.slmpc.prismrhi.resource.RhiBuffer;
-import com.github.slmpc.prismrhi.resource.RhiBufferCreateInfo;
-import com.github.slmpc.prismrhi.resource.RhiBufferUsage;
-import com.github.slmpc.prismrhi.resource.RhiImageView;
-import com.github.slmpc.prismrhi.resource.RhiMemoryUsage;
-import com.github.slmpc.prismrhi.resource.RhiSampler;
+import com.github.slmpc.prismrhi.descriptor.PRhiDescriptorSet;
+import com.github.slmpc.prismrhi.descriptor.PRhiDescriptorSetAllocateInfo;
+import com.github.slmpc.prismrhi.descriptor.PRhiDescriptorSetLayout;
+import com.github.slmpc.prismrhi.descriptor.PRhiDescriptorSetLayoutCreateInfo;
+import com.github.slmpc.prismrhi.descriptor.PRhiDescriptorStage;
+import com.github.slmpc.prismrhi.descriptor.PRhiDescriptorType;
+import com.github.slmpc.prismrhi.device.PRhiDevice;
+import com.github.slmpc.prismrhi.pipeline.PRhiGraphicsPipeline;
+import com.github.slmpc.prismrhi.rendering.PRhiRect2D;
+import com.github.slmpc.prismrhi.rendering.PRhiRenderingAttachment;
+import com.github.slmpc.prismrhi.rendering.PRhiRenderingInfo;
+import com.github.slmpc.prismrhi.resource.PRhiBuffer;
+import com.github.slmpc.prismrhi.resource.PRhiBufferCreateInfo;
+import com.github.slmpc.prismrhi.resource.PRhiBufferUsage;
+import com.github.slmpc.prismrhi.resource.PRhiImageView;
+import com.github.slmpc.prismrhi.resource.PRhiMemoryUsage;
+import com.github.slmpc.prismrhi.resource.PRhiSampler;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +34,7 @@ final class MinecraftBlurResources2612 implements RenderResources, AutoCloseable
     private static final int MIN_UNIFORM_BYTES = 16;
 
     private final RenderResources delegate;
-    private final RhiDescriptorSetLayout effectLayout;
+    private final PRhiDescriptorSetLayout effectLayout;
     private final ByteBuffer uniformUploadStaging = ByteBuffer.allocateDirect(MinecraftBlurRegion2612.UNIFORM_BYTES);
     private final List<RetiredBinding> retired = new ArrayList<>();
     private BindingScope active;
@@ -42,14 +42,14 @@ final class MinecraftBlurResources2612 implements RenderResources, AutoCloseable
 
     MinecraftBlurResources2612(RenderResources delegate) {
         this.delegate = Objects.requireNonNull(delegate, "delegate");
-        effectLayout = delegate.device().createDescriptorSetLayout(RhiDescriptorSetLayoutCreateInfo.builder()
-                .binding(0, RhiDescriptorType.COMBINED_IMAGE_SAMPLER, 1, RhiDescriptorStage.FRAGMENT)
-                .binding(1, RhiDescriptorType.UNIFORM_BUFFER, 1, RhiDescriptorStage.FRAGMENT)
-                .binding(2, RhiDescriptorType.UNIFORM_BUFFER, 1, RhiDescriptorStage.FRAGMENT)
+        effectLayout = delegate.device().createDescriptorSetLayout(PRhiDescriptorSetLayoutCreateInfo.builder()
+                .binding(0, PRhiDescriptorType.COMBINED_IMAGE_SAMPLER, 1, PRhiDescriptorStage.FRAGMENT)
+                .binding(1, PRhiDescriptorType.UNIFORM_BUFFER, 1, PRhiDescriptorStage.FRAGMENT)
+                .binding(2, PRhiDescriptorType.UNIFORM_BUFFER, 1, PRhiDescriptorStage.FRAGMENT)
                 .build());
     }
 
-    BindingScope bind(Render2DTexture input, RhiImageView inputView, RhiSampler sampler, RhiImageView targetView) {
+    BindingScope bind(Render2DTexture input, PRhiImageView inputView, PRhiSampler sampler, PRhiImageView targetView) {
         requireOpen();
         if (active != null) throw new IllegalStateException("A blur binding is already active");
         Objects.requireNonNull(input, "input");
@@ -61,17 +61,17 @@ final class MinecraftBlurResources2612 implements RenderResources, AutoCloseable
         return active;
     }
 
-    @Override public RhiDevice device() { requireOpen(); return delegate.device(); }
-    @Override public RhiGraphicsPipeline requirePipeline(String id) { requireOpen(); return delegate.requirePipeline(id); }
-    @Override public RhiDescriptorSet requireFrameDescriptor() {
+    @Override public PRhiDevice device() { requireOpen(); return delegate.device(); }
+    @Override public PRhiGraphicsPipeline requirePipeline(String id) { requireOpen(); return delegate.requirePipeline(id); }
+    @Override public PRhiDescriptorSet requireFrameDescriptor() {
         requireOpen();
         return delegate.requireFrameDescriptor();
     }
-    @Override public RhiDescriptorSet requireTextureDescriptor(Render2DTexture texture) {
+    @Override public PRhiDescriptorSet requireTextureDescriptor(Render2DTexture texture) {
         requireOpen();
         return delegate.requireTextureDescriptor(texture);
     }
-    @Override public RhiDescriptorSet requireSegmentedShadowDescriptor(Render2DCommand.SegmentedShadow shadow) {
+    @Override public PRhiDescriptorSet requireSegmentedShadowDescriptor(Render2DCommand.SegmentedShadow shadow) {
         requireOpen();
         return delegate.requireSegmentedShadowDescriptor(shadow);
     }
@@ -98,20 +98,20 @@ final class MinecraftBlurResources2612 implements RenderResources, AutoCloseable
 
         releaseCompleted(execution.completedFrameId());
         ByteBuffer payload = request.uniforms();
-        RhiBuffer first = createUniformBuffer(payload);
-        RhiBuffer second = null;
-        RhiDescriptorSet descriptor = null;
+        PRhiBuffer first = createUniformBuffer(payload);
+        PRhiBuffer second = null;
+        PRhiDescriptorSet descriptor = null;
         try {
             second = createUniformBuffer(ByteBuffer.allocate(0));
-            descriptor = device().allocateDescriptorSet(RhiDescriptorSetAllocateInfo.of(effectLayout));
-            RhiBuffer finalSecond = second;
+            descriptor = device().allocateDescriptorSet(PRhiDescriptorSetAllocateInfo.of(effectLayout));
+            PRhiBuffer finalSecond = second;
             descriptor.update(writer -> writer
                     .combinedImageSampler(0, 0, scope.inputView, scope.sampler)
                     .uniformBuffer(1, first)
                     .uniformBuffer(2, finalSecond));
             retired.add(new RetiredBinding(execution.frameId(), descriptor, first, second));
-            RhiRenderingInfo rendering = RhiRenderingInfo.builder(RhiRect2D.of(execution.width(), execution.height()))
-                    .color(RhiRenderingAttachment.color(scope.targetView)).build();
+            PRhiRenderingInfo rendering = PRhiRenderingInfo.builder(PRhiRect2D.of(execution.width(), execution.height()))
+                    .color(PRhiRenderingAttachment.color(scope.targetView)).build();
             return new FullscreenEffectBinding(descriptor, FullscreenEffectPass.rendering(rendering));
         } catch (RuntimeException failure) {
             closeAfterFailure(descriptor, second, first, failure);
@@ -119,12 +119,12 @@ final class MinecraftBlurResources2612 implements RenderResources, AutoCloseable
         }
     }
 
-    private RhiBuffer createUniformBuffer(ByteBuffer payload) {
+    private PRhiBuffer createUniformBuffer(ByteBuffer payload) {
         ByteBuffer content = payload.slice();
-        RhiBuffer buffer = device().createBuffer(RhiBufferCreateInfo.builder(
+        PRhiBuffer buffer = device().createBuffer(PRhiBufferCreateInfo.builder(
                         Math.max(MIN_UNIFORM_BYTES, content.remaining()))
-                .usage(RhiBufferUsage.UNIFORM_BUFFER)
-                .memoryUsage(RhiMemoryUsage.CPU_TO_GPU)
+                .usage(PRhiBufferUsage.UNIFORM_BUFFER)
+                .memoryUsage(PRhiMemoryUsage.CPU_TO_GPU)
                 .build());
         if (content.hasRemaining()) {
             uniformUploadStaging.clear().limit(content.remaining());
@@ -171,13 +171,13 @@ final class MinecraftBlurResources2612 implements RenderResources, AutoCloseable
 
     final class BindingScope implements AutoCloseable {
         private final Render2DTexture input;
-        private final RhiImageView inputView;
-        private final RhiSampler sampler;
-        private final RhiImageView targetView;
+        private final PRhiImageView inputView;
+        private final PRhiSampler sampler;
+        private final PRhiImageView targetView;
         private boolean closed;
 
-        private BindingScope(Render2DTexture input, RhiImageView inputView,
-                             RhiSampler sampler, RhiImageView targetView) {
+        private BindingScope(Render2DTexture input, PRhiImageView inputView,
+                             PRhiSampler sampler, PRhiImageView targetView) {
             this.input = input;
             this.inputView = inputView;
             this.sampler = sampler;
@@ -191,8 +191,8 @@ final class MinecraftBlurResources2612 implements RenderResources, AutoCloseable
         }
     }
 
-    private record RetiredBinding(long frameId, RhiDescriptorSet descriptor,
-                                  RhiBuffer first, RhiBuffer second) implements AutoCloseable {
+    private record RetiredBinding(long frameId, PRhiDescriptorSet descriptor,
+                                  PRhiBuffer first, PRhiBuffer second) implements AutoCloseable {
         @Override public void close() {
             RuntimeException failure = GraphicsResourceCloser2612.closeReverse(descriptor, second, first);
             if (failure != null) throw failure;
