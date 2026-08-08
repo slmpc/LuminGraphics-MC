@@ -35,6 +35,7 @@ final class MinecraftBlurResources2612 implements RenderResources, AutoCloseable
 
     private final RenderResources delegate;
     private final RhiDescriptorSetLayout effectLayout;
+    private final ByteBuffer uniformUploadStaging = ByteBuffer.allocateDirect(MinecraftBlurRegion2612.UNIFORM_BYTES);
     private final List<RetiredBinding> retired = new ArrayList<>();
     private BindingScope active;
     private boolean closed;
@@ -125,7 +126,11 @@ final class MinecraftBlurResources2612 implements RenderResources, AutoCloseable
                 .usage(RhiBufferUsage.UNIFORM_BUFFER)
                 .memoryUsage(RhiMemoryUsage.CPU_TO_GPU)
                 .build());
-        if (content.hasRemaining()) buffer.write(content);
+        if (content.hasRemaining()) {
+            uniformUploadStaging.clear().limit(content.remaining());
+            uniformUploadStaging.put(content).flip();
+            buffer.write(uniformUploadStaging.slice());
+        }
         return buffer;
     }
 

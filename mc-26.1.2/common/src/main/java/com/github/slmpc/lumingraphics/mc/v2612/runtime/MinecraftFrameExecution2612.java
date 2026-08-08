@@ -23,6 +23,7 @@ final class MinecraftFrameExecution2612 implements AutoCloseable {
         RenderTarget target = runtime.currentRenderTarget();
         SurfaceMetrics framebufferMetrics = runtime.luminContext().metrics();
         SurfaceMetrics projectionMetrics = runtime.projectionMetrics();
+        resources.releaseCompleted(runtime.lastEndedFrameId());
         resources.updateFrameUniforms(captureUniforms(framebufferMetrics, projectionMetrics));
         execution = new RenderExecution(runtime.commandBuffer(), resources, runtime.activeFrameId(),
                 runtime.lastEndedFrameId(), target.width(), target.height());

@@ -9,7 +9,7 @@ import java.util.Objects;
 /** Minecraft HUD 圆角区域模糊的公共描述与 std140 编码。 */
 public record MinecraftBlurRegion2612(UiRect bounds, CornerRadii radii, float strength, List<Segment> segments) {
     private static final int MAX_SEGMENTS = 64;
-    private static final int UNIFORM_BYTES = 2112;
+    static final int UNIFORM_BYTES = 2112;
 
     public MinecraftBlurRegion2612 {
         Objects.requireNonNull(bounds, "bounds");
@@ -27,7 +27,7 @@ public record MinecraftBlurRegion2612(UiRect bounds, CornerRadii radii, float st
         if (framebufferWidth <= 0 || framebufferHeight <= 0 || !Float.isFinite(guiScale) || guiScale <= 0.0f) {
             throw new IllegalArgumentException("Framebuffer dimensions and GUI scale must be positive");
         }
-        ByteBuffer result = ByteBuffer.allocateDirect(UNIFORM_BYTES).order(ByteOrder.nativeOrder());
+        ByteBuffer result = ByteBuffer.allocate(UNIFORM_BYTES).order(ByteOrder.nativeOrder());
         put(result, framebufferWidth, framebufferHeight, strength, 0.0f);
         put(result, bounds.width() * guiScale, bounds.height() * guiScale, bounds.x() * guiScale,
                 framebufferHeight - (bounds.y() + bounds.height()) * guiScale);

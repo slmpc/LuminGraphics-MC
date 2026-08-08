@@ -45,6 +45,8 @@ class MinecraftUiRuntime2612BlurApiTest {
         segments.clear();
 
         assertEquals(1, region.segments().size());
+        assertFalse(region.uniforms(320, 240, 1.0f).isDirect(),
+                "per-frame blur uniforms must remain on the Java heap");
     }
 
     @Test
