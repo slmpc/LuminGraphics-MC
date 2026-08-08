@@ -232,7 +232,8 @@ gradle.allprojects {
         pluginManager.withPlugin("java") {
             pluginManager.apply("maven-publish")
             extensions.configure<PublishingExtension> {
-                providers.gradleProperty("publishRepository").orNull?.let { repository ->
+                val publishRepository = providers.gradleProperty("publishRepository").orNull
+                publishRepository?.let { repository ->
                     repositories.maven {
                         name = "localRelease"
                         url = uri(repository)
@@ -244,6 +245,11 @@ gradle.allprojects {
                     pom {
                         name.set(artifactId)
                         description.set("LuminGraphics-MC ${project.path} artifact")
+                    }
+                }
+                if (publishRepository == null) {
+                    tasks.named("publish") {
+                        dependsOn("publishToMavenLocal")
                     }
                 }
             }

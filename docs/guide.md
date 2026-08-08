@@ -89,14 +89,16 @@ matching loader artifacts:
 
 ```powershell
 cd D:\Dev\ChenMeng\LuminGraphics
-.\gradlew.bat publish -PpublishRepository=D:\Dev\ChenMeng\maven-repository
+.\gradlew.bat publishToMavenLocal
 cd D:\Dev\ChenMeng\LuminGraphics-MC
-.\gradlew.bat publish -PpublishRepository=D:\Dev\ChenMeng\maven-repository
+.\gradlew.bat publish
 ```
 
-The MC build checks changing modules on each Gradle invocation. The same
-property is used as the first dependency repository, or pass
-`-PlocalRepository=...` when resolution and publication use different paths.
+The MC `publish` task defaults to Maven Local. Pass
+`-PpublishRepository=D:\Dev\ChenMeng\maven-repository` only for an explicit
+shared file-based Maven repository. The same property is used as the first
+dependency repository; pass `-PlocalRepository=...` when resolution and
+publication use different paths.
 
 Borrowed leases observe exact context/owner-render-thread/current-GL checks and
 become unusable after their owner token invalidates. Closing a borrowed lease

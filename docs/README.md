@@ -20,5 +20,6 @@ version-catalog aliases carry an explicit version prefix, for example
 
 Locally developed `com.github.slmpc.lumingraphics` and
 `com.github.slmpc.prismrhi` dependencies resolve exclusively from Maven Local.
-The `publishRepository` property remains the destination for this repository's
-own local Maven publications.
+The default `publish` task publishes this repository's artifacts to Maven Local.
+Pass `-PpublishRepository=<path>` only when an explicit shared file-based Maven
+repository is required.
