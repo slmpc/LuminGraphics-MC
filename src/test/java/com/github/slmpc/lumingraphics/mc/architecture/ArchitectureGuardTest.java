@@ -56,7 +56,7 @@ final class ArchitectureGuardTest {
             try (var paths = Files.list(libraries)) {
                 List<Path> loaderJars = paths.filter(path -> path.toString().endsWith(".jar"))
                         .filter(path -> !path.getFileName().toString().contains("sources"))
-                        .filter(path -> path.getFileName().toString().endsWith("-1.2.0.jar"))
+                        .filter(path -> path.getFileName().toString().endsWith("-1.2.1.jar"))
                         .toList();
                 assertTrue(loaderJars.size() == 1, () -> "expected one loader JAR in " + libraries + ", found " + loaderJars);
                 for (Path jar : loaderJars) {
@@ -226,8 +226,8 @@ final class ArchitectureGuardTest {
         String[] parts = coordinate.split(":", -1);
         reject(parts.length != 3, path, "malformed GAV " + coordinate);
         String expectedVersion = switch (parts[0]) {
-            case "com.github.slmpc.lumingraphics" -> "1.2.1-SNAPSHOT";
-            case "com.github.slmpc.prismrhi" -> "0.2.1-SNAPSHOT";
+            case "com.github.slmpc.lumingraphics" -> "1.2.1";
+            case "com.github.slmpc.prismrhi" -> "0.2.1";
             default -> null;
         };
         reject(expectedVersion != null && !parts[2].equals(expectedVersion), path, "stale published GAV " + coordinate);

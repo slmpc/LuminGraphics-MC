@@ -4,7 +4,7 @@ license="LGPL-3.0-only"
 
 [[mods]]
 modId="lumin_graphics_mc"
-version="1.2.0+mc26.2"
+version="1.2.1+mc26.2"
 displayName="Lumin Graphics MC"
 description='''Minecraft-owned rendering context bridge for Lumin Graphics.'''
 displayTest="IGNORE_SERVER_VERSION"
