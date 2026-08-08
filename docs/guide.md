@@ -83,8 +83,8 @@ glow-mask behavior.
 
 ## Local release publishing
 
-The current release uses LuminGraphics-MC `1.2.1`, LuminGraphics `1.2.1`, and
-PrismRHI `0.2.1`. Publish PrismRHI first, then LuminGraphics, then these
+The current release uses LuminGraphics-MC `1.2.2`, LuminGraphics `1.2.2`, and
+PrismRHI `0.2.2`. Publish PrismRHI first, then LuminGraphics, then these
 matching loader artifacts:
 
 ```powershell
