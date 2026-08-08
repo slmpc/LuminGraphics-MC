@@ -25,7 +25,7 @@ reference/                checked source references for version comparison
 | 26.1.2 bridge | `mc-26.1.2/common/src/main/java/.../v2612` | Access, bridge, mixin, smoke, text. |
 | 26.2 bridge | `mc-26.2/common/src/main/java/.../v262` | Version-specific access target changes. |
 | Loader metadata | versioned Fabric/NeoForge `src/main/resources` | AW, AT, mixin and mod descriptors. |
-| Smoke wiring | `build.gradle` | Positive and negative matrix smokes. |
+| Smoke wiring | `build.gradle.kts` | Positive and negative matrix smokes. |
 
 ## Code Map
 

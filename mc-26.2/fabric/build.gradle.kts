@@ -1,7 +1,7 @@
-apply(from = rootProject.file("gradle/fabric-module.gradle"))
+apply(from = rootProject.file("gradle/fabric-module.gradle.kts"))
 
 dependencies {
-    add("minecraft", "com.mojang:minecraft:26.2")
-    add("implementation", "net.fabricmc:fabric-loader:0.19.3")
-    add("implementation", "net.fabricmc.fabric-api:fabric-api:0.156.0+26.2")
+    add("minecraft", libs.minecraft.v262)
+    add("implementation", libs.fabric.loader.v262)
+    add("implementation", libs.fabric.api.v262)
 }

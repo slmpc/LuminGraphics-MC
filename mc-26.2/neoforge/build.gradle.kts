@@ -1,7 +1,7 @@
 import org.gradle.kotlin.dsl.withGroovyBuilder
 
-apply(from = rootProject.file("gradle/neoforge-module.gradle"))
+apply(from = rootProject.file("gradle/neoforge-module.gradle.kts"))
 
 extensions.getByName("neoForge").withGroovyBuilder {
-    setProperty("version", "26.2.0.37-beta")
+    setProperty("version", libs.versions.neoforge.v262.get())
 }

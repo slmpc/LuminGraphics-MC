@@ -17,7 +17,7 @@ extensions.getByType<BasePluginExtension>().apply {
 val sourceSets = extensions.getByType<SourceSetContainer>()
 
 extensions.getByName("neoForge").withGroovyBuilder {
-    setProperty("neoFormVersion", "26.2-2")
+    setProperty("neoFormVersion", libs.versions.neoform.v262.get())
 }
 
 dependencies {

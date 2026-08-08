@@ -12,6 +12,15 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
+        exclusiveContent {
+            forRepository {
+                mavenLocal()
+            }
+            filter {
+                includeGroup("com.github.slmpc.lumingraphics")
+                includeGroup("com.github.slmpc.prismrhi")
+            }
+        }
         maven(url = "https://slmpc.github.io/maven-repository/")
         mavenCentral()
         maven(url = "https://libraries.minecraft.net")

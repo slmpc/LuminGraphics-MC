@@ -13,7 +13,7 @@ final class CanonicalTopologyContractTest {
     @Test
     void settingsOwnedImmutableSpecsDriveProjectsAndCommonArchives() throws IOException {
         String settings = Files.readString(Path.of("settings.gradle.kts"));
-        String rootBuild = Files.readString(Path.of("build.gradle"));
+        String rootBuild = Files.readString(Path.of("build.gradle.kts"));
         String common2612 = Files.readString(Path.of("mc-26.1.2/common/build.gradle.kts"));
         String common262 = Files.readString(Path.of("mc-26.2/common/build.gradle.kts"));
 
@@ -25,9 +25,9 @@ final class CanonicalTopologyContractTest {
         assertTrue(settings.contains("gradle.extra[\"minecraftLeafSpecs\"] = minecraftLeafSpecs"));
         assertFalse(settings.contains("include(\":mc-"), "settings must not duplicate canonical leaf paths");
 
-        assertTrue(rootBuild.contains("def minecraftLeafSpecs = gradle.ext.minecraftLeafSpecs"));
-        assertFalse(rootBuild.contains("def minecraftLeafSpecs = Collections.unmodifiableMap(["),
-                "build.gradle must consume the settings-owned map instead of defining a second map");
+        assertTrue(rootBuild.contains("val minecraftLeafSpecs = gradle.extra[\"minecraftLeafSpecs\"]"));
+        assertFalse(rootBuild.contains("val minecraftLeafSpecs = mapOf("),
+                "build.gradle.kts must consume the settings-owned map instead of defining a second map");
 
         assertCommonArchiveLookup(common2612);
         assertCommonArchiveLookup(common262);

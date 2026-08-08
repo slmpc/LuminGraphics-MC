@@ -18,7 +18,7 @@ unsupported-detail, and CSV matrix validation contracts.
 ## Tests And Assets
 
 Tests in `src/test/java` validate matrix structure and contract semantics.
-`build.gradle` packages `../../docs/bridge-matrix.csv` as
+`build.gradle.kts` packages `../../docs/bridge-matrix.csv` as
 `bridge/bridge-matrix.csv`; do not create another matrix source.
 
 Run `..\\gradlew.bat :bridge-contract:test` for contract-only changes.

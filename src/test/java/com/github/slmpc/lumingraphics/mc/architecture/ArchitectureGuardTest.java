@@ -226,8 +226,8 @@ final class ArchitectureGuardTest {
         String[] parts = coordinate.split(":", -1);
         reject(parts.length != 3, path, "malformed GAV " + coordinate);
         String expectedVersion = switch (parts[0]) {
-            case "com.github.slmpc.lumingraphics" -> "1.2.0";
-            case "com.github.slmpc.prismrhi" -> "0.2.0";
+            case "com.github.slmpc.lumingraphics" -> "1.2.1-SNAPSHOT";
+            case "com.github.slmpc.prismrhi" -> "0.2.1-SNAPSHOT";
             default -> null;
         };
         reject(expectedVersion != null && !parts[2].equals(expectedVersion), path, "stale published GAV " + coordinate);

@@ -17,7 +17,7 @@ final class MatrixBuildFunctionalTest {
 
     @Test
     void baselineSourceSelectionUsesDeclaredGeneratorOutput() throws IOException {
-        String rootBuild = Files.readString(Path.of("build.gradle"));
+        String rootBuild = Files.readString(Path.of("build.gradle.kts"));
         assertTrue(rootBuild.contains("sourcesOutputJar"),
                 "baseline generation must consume GenerateSourcesTask.sourcesOutputJar");
         assertFalse(rootBuild.contains(".gradle/loom-cache/minecraftMaven"),
@@ -26,8 +26,8 @@ final class MatrixBuildFunctionalTest {
 
     @Test
     void fabricCompilationOrdersAfterLoomSourceGenerationWhenBothAreRequested() throws IOException {
-        String fabricBuild = Files.readString(Path.of("gradle/fabric-module.gradle"));
-        assertTrue(fabricBuild.contains("mustRunAfter tasks.named('genSourcesWithVineflower')"),
+        String fabricBuild = Files.readString(Path.of("gradle/fabric-module.gradle.kts"));
+        assertTrue(fabricBuild.contains("mustRunAfter(tasks.named(\"genSourcesWithVineflower\"))"),
                 "compileJava must follow Loom source generation when both tasks are requested");
     }
 
