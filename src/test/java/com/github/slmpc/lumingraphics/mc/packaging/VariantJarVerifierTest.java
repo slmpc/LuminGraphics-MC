@@ -48,12 +48,12 @@ final class VariantJarVerifierTest {
         assertTrue(ArtifactCatalog.EXPECTED.stream().anyMatch(coordinate ->
                 coordinate.group().equals("com.github.slmpc.lumingraphics.mc")
                         && coordinate.artifact().equals("bridge-contract")
-                        && coordinate.version().equals("1.2.2")));
+                        && coordinate.version().equals("1.2.4-SNAPSHOT")));
     }
 
     private record VariantPath(String loader, String minecraft) {
         private String fileName() {
-            return "lumin-graphics-mc-" + loader + '-' + minecraft + "-1.2.2.jar";
+            return "lumin-graphics-mc-" + loader + '-' + minecraft + "-1.2.4-SNAPSHOT.jar";
         }
     }
 }
