@@ -41,7 +41,7 @@ public final class VariantJarVerifier {
         for (Variant variant : variants(root, override)) {
             verifyVariant(variant, artifacts);
         }
-        System.out.println("VARIANT_MATRIX_OK variants=4 shadowedArtifacts=36 version=1.2.5-SNAPSHOT");
+        System.out.println("VARIANT_MATRIX_OK variants=4 shadowedArtifacts=36 version=1.2.5");
     }
 
     private static List<Variant> variants(Path root, Path override) {
@@ -53,7 +53,7 @@ public final class VariantJarVerifier {
     }
 
     private static Variant variant(Path root, Path override, String loader, String minecraft, String key, String packageKey) {
-        String fileName = "lumin-graphics-mc-" + loader + '-' + minecraft + "-1.2.5-SNAPSHOT.jar";
+        String fileName = "lumin-graphics-mc-" + loader + '-' + minecraft + "-1.2.5.jar";
         Path standard = standardArtifactPath(root, loader, minecraft);
         Path artifact = override == null ? standard : override.resolve(fileName);
         String entrypoint = loader.equals("fabric")
@@ -65,7 +65,7 @@ public final class VariantJarVerifier {
     }
 
     static Path standardArtifactPath(Path root, String loader, String minecraft) {
-        String fileName = "lumin-graphics-mc-" + loader + '-' + minecraft + "-1.2.5-SNAPSHOT.jar";
+        String fileName = "lumin-graphics-mc-" + loader + '-' + minecraft + "-1.2.5.jar";
         return root.resolve("mc-" + minecraft).resolve(loader).resolve("build/libs").resolve(fileName);
     }
 
@@ -114,7 +114,7 @@ public final class VariantJarVerifier {
             required.add("lumin_graphics_mc_" + variant.minecraft().replace(".", "") + ".accesswidener");
             JsonObject metadata = parseJson(outer.required("fabric.mod.json"));
             requireText(metadata, "id", "lumin_graphics_mc", variant.path());
-            requireText(metadata, "version", "1.2.5-SNAPSHOT+mc" + variant.minecraft(), variant.path());
+            requireText(metadata, "version", "1.2.5+mc" + variant.minecraft(), variant.path());
         } else {
             required.add("META-INF/neoforge.mods.toml");
             required.add("META-INF/accesstransformer.cfg");
@@ -136,7 +136,7 @@ public final class VariantJarVerifier {
             throw new IOException("NeoForge TOML must define exactly one mod: " + variant.path());
         }
         if (!"lumin_graphics_mc".equals(mod.getString("modId"))
-                || !("1.2.5-SNAPSHOT+mc" + variant.minecraft()).equals(mod.getString("version"))) {
+                || !("1.2.5+mc" + variant.minecraft()).equals(mod.getString("version"))) {
             throw new IOException("NeoForge mod id/version mismatch: " + variant.path());
         }
     }

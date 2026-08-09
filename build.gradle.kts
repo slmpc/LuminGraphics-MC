@@ -298,7 +298,7 @@ tasks.register("verifyPublishedCoordinates") {
     group = "verification"
     description = "Inspects and freshly resolves every current publication from the explicit local Maven repository."
     doLast {
-        if (project.version.toString() != "1.2.5-SNAPSHOT") {
+        if (project.version.toString() != "1.2.5") {
             throw GradleException("Unexpected development publication version: ${project.version}")
         }
         val repositoryProperty = providers.gradleProperty("publishRepository").orNull
