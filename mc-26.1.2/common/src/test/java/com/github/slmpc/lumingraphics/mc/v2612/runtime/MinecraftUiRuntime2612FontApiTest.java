@@ -23,6 +23,8 @@ class MinecraftUiRuntime2612FontApiTest {
                 MinecraftUiRuntime2612.class.getMethod("minecraftFont").getReturnType());
         assertEquals(SystemEmojiAtlas.class,
                 MinecraftUiRuntime2612.class.getMethod("systemEmojiAtlas").getReturnType());
+        assertEquals(void.class,
+                MinecraftUiRuntime2612.class.getMethod("setFontGlyphsPerFrame", int.class).getReturnType());
     }
 
     @Test

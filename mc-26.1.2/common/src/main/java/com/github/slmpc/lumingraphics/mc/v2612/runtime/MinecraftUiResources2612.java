@@ -21,6 +21,8 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 
@@ -35,6 +37,9 @@ final class MinecraftUiResources2612 implements UiResourceResolver, AutoCloseabl
     private final Map<String, Object> fontSourceKeys = new LinkedHashMap<>();
     private final Map<String, TtfFontLoader> fonts = new LinkedHashMap<>();
     private final TextLayoutEngine textLayouts = new TextLayoutEngine();
+    private final TtfFontLoader.GlyphBudget fontGlyphBudget = new TtfFontLoader.GlyphBudget();
+    private final ExecutorService glyphRasterizer = Executors.newSingleThreadExecutor(task ->
+            Thread.ofPlatform().daemon().name("Lumin Glyph Rasterizer 26.1.2").unstarted(task));
     private MinecraftGlyphAtlasUploader2612 uploader;
     private SystemEmojiAtlas emoji;
     private String defaultFontId;
@@ -119,6 +124,12 @@ final class MinecraftUiResources2612 implements UiResourceResolver, AutoCloseabl
         return emoji;
     }
 
+    synchronized void beginFontFrame(long frameId, int maxGlyphs) {
+        requireOpen();
+        runtime.luminContext().requireRenderThread();
+        fontGlyphBudget.beginFrame(frameId, maxGlyphs);
+    }
+
     synchronized void invalidate() {
         if (closed) return;
         RuntimeException failure = closeReloadable();
@@ -132,6 +143,8 @@ final class MinecraftUiResources2612 implements UiResourceResolver, AutoCloseabl
         RuntimeException failure = closeReloadable();
         failure = GraphicsResourceCloser2612.merge(failure,
                 GraphicsResourceCloser2612.closeReverse(textLayouts));
+        glyphRasterizer.shutdownNow();
+        fontGlyphBudget.clear();
         if (failure != null) throw failure;
     }
 
@@ -186,7 +199,7 @@ final class MinecraftUiResources2612 implements UiResourceResolver, AutoCloseabl
         // MC 26.1.2 字体页固定为 1024²，避免调用方配置回退到较小 Atlas 后重新触发跨页问题。
         return new TtfFontLoader(source, config.fontPixelHeight(), config.fontPadding(),
                 MinecraftUiRuntime2612.FONT_ATLAS_WIDTH, MinecraftUiRuntime2612.FONT_ATLAS_HEIGHT,
-                config.maxAtlasPages(), uploader(), Runnable::run);
+                config.maxAtlasPages(), uploader(), glyphRasterizer, fontGlyphBudget);
     }
 
     private MinecraftGlyphAtlasUploader2612 uploader() {
@@ -199,6 +212,7 @@ final class MinecraftUiResources2612 implements UiResourceResolver, AutoCloseabl
         RuntimeException failure = GraphicsResourceCloser2612.closeReverse(emoji);
         failure = GraphicsResourceCloser2612.merge(failure,
                 GraphicsResourceCloser2612.closeReverse(fonts.values().toArray(AutoCloseable[]::new)));
+        fontGlyphBudget.clear();
         emoji = null;
         fonts.clear();
         failure = GraphicsResourceCloser2612.merge(failure,

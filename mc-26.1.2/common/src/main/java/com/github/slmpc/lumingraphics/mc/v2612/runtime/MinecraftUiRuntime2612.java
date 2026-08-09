@@ -87,6 +87,7 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
     private MinecraftUiResources2612 uiResources;
     private MinecraftBlurService2612 blurService;
     private MinecraftFontAdapter2612 minecraftFont;
+    private int fontGlyphsPerFrame = Integer.MAX_VALUE;
     private boolean closed;
 
     private MinecraftUiRuntime2612(Minecraft client, UiConfig config,
@@ -146,6 +147,16 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
     public synchronized void setProjectionScale(double scale) {
         requireOpen();
         graphics.setProjectionScale(scale);
+    }
+
+    /** 设置同一 Minecraft 帧内所有字体合计允许写入 atlas 的真实字形数量。 */
+    public synchronized void setFontGlyphsPerFrame(int maxGlyphs) {
+        requireOpen();
+        if (maxGlyphs <= 0) throw new IllegalArgumentException("maxGlyphs must be positive");
+        fontGlyphsPerFrame = maxGlyphs;
+        if (uiResources != null && graphics.frameActive()) {
+            uiResources.beginFontFrame(graphics.activeFrameId(), maxGlyphs);
+        }
     }
 
     /** 注册一个由 Minecraft ResourceManager 读取的 TTF/OTF 字体。 */
@@ -305,6 +316,7 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
         renderResources = new DefaultRenderResources(graphics.device(), target.colorView().format(), depth);
         try {
             uiResources = new MinecraftUiResources2612(client, graphics, renderResources, config);
+            uiResources.beginFontFrame(graphics.activeFrameId(), fontGlyphsPerFrame);
             fontResources.forEach(uiResources::registerResourceFont);
             uiResources.useDefaultFont(defaultFontId);
         } catch (RuntimeException failure) {

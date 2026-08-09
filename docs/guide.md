@@ -64,6 +64,18 @@ only while referenced; staging buffers and retired
 revisions are released after the frame command buffer has submitted, rather
 than accumulating until runtime shutdown.
 
+`MinecraftUiRuntime2612.setFontGlyphsPerFrame(int)` limits the total number of
+real glyphs written by all runtime-owned fonts in one Minecraft frame.
+Unsupported code points and supported glyphs deferred by this budget use the
+built-in hollow-box glyph. Layouts containing deferred glyphs retry on later
+frames instead of caching the placeholder permanently.
+
+Each UI runtime uses one dedicated daemon thread for STB glyph rasterization.
+Rasterized pixels enter a shared queue; atlas mutation and GPU upload are drained
+from that queue on the Minecraft render thread at the configured per-frame limit.
+Resource reload cancels stale font requests, and runtime shutdown also stops the
+rasterizer thread.
+
 Each 2D frame uses a top-left-origin orthographic projection derived from the
 current framebuffer size and an effective UI scale. The runtime defaults to
 Minecraft's GUI scale; an application such as Epsilon can call
