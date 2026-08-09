@@ -25,3 +25,9 @@ Minecraft 26.1.2 consumers may use the public
 `MinecraftGraphicsRuntime2612` common API through the matching loader JAR for
 render-thread context binding, explicit frame submission/abort, borrowed main
 target bridging, invalidation, and deterministic runtime teardown.
+
+## License
+
+LuminGraphics-MC is open source under the
+[GNU Lesser General Public License v3.0 only](LICENSE) (`LGPL-3.0-only`).
+The incorporated GNU GPL v3 terms are included in [COPYING](COPYING).

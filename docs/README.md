@@ -8,6 +8,7 @@ public registry consumer flow.
 - [Repository README](../README.md): artifact selection and capability summary.
 - [Consumer and bridge guide](guide.md): loader setup, ownership, access, and smokes.
 - [Bridge matrix](bridge-matrix.csv): 168 supported/unsupported and provenance rows.
+- [License](../LICENSE): GNU Lesser General Public License v3.0 only.
 
 The matrix's `minimum_mode`, `thread_context_rule`, `owner`, `invalidation`,
 and `close_behavior` fields form one contract. Read them together.

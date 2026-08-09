@@ -6,6 +6,7 @@ import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.withGroovyBuilder
@@ -61,6 +62,16 @@ subprojects {
         tasks.withType<JavaCompile>().configureEach {
             options.release.set(25)
             options.encoding = "UTF-8"
+        }
+        tasks.withType<Jar>().configureEach {
+            from(rootProject.file("LICENSE")) {
+                into("META-INF")
+                rename { "LICENSE-LuminGraphics-MC" }
+            }
+            from(rootProject.file("COPYING")) {
+                into("META-INF")
+                rename { "COPYING-GPL-3.0" }
+            }
         }
     }
 }
@@ -245,6 +256,13 @@ gradle.allprojects {
                     pom {
                         name.set(artifactId)
                         description.set("LuminGraphics-MC ${project.path} artifact")
+                        licenses {
+                            license {
+                                name.set("GNU Lesser General Public License v3.0 only")
+                                url.set("https://www.gnu.org/licenses/lgpl-3.0.html")
+                                distribution.set("repo")
+                            }
+                        }
                     }
                 }
                 if (publishRepository == null) {
