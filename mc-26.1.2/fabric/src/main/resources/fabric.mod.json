@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "lumin_graphics_mc",
-  "version": "1.2.4+mc26.1.2",
+  "version": "1.2.5-SNAPSHOT+mc26.1.2",
   "name": "LuminGraphics MC",
   "description": "Minecraft 26.1.2 OpenGL binding and owned LuminGraphics runtime.",
   "environment": "client",

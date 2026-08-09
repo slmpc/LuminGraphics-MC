@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.DoubleSupplier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 
@@ -32,6 +33,7 @@ final class MinecraftUiResources2612 implements UiResourceResolver, AutoCloseabl
     private final MinecraftGraphicsRuntime2612 runtime;
     private final DefaultRenderResources renderResources;
     private final MinecraftUiRuntime2612.UiConfig config;
+    private final DoubleSupplier textScaleMultiplier;
     private final Map<TextureKey, BorrowedTexture> textures = new LinkedHashMap<>();
     private final Map<String, FontResource> fontSources = new LinkedHashMap<>();
     private final Map<String, Object> fontSourceKeys = new LinkedHashMap<>();
@@ -48,10 +50,18 @@ final class MinecraftUiResources2612 implements UiResourceResolver, AutoCloseabl
     MinecraftUiResources2612(Minecraft client, MinecraftGraphicsRuntime2612 runtime,
                              DefaultRenderResources renderResources,
                              MinecraftUiRuntime2612.UiConfig config) {
+        this(client, runtime, renderResources, config, () -> MinecraftUiRuntime2612.UI_TEXT_SCALE);
+    }
+
+    MinecraftUiResources2612(Minecraft client, MinecraftGraphicsRuntime2612 runtime,
+                             DefaultRenderResources renderResources,
+                             MinecraftUiRuntime2612.UiConfig config,
+                             DoubleSupplier textScaleMultiplier) {
         this.client = client;
         this.runtime = runtime;
         this.renderResources = renderResources;
         this.config = config;
+        this.textScaleMultiplier = Objects.requireNonNull(textScaleMultiplier, "textScaleMultiplier");
         config.fontResources().forEach((id, resource) -> {
             fontSources.put(id, resource(resource));
             fontSourceKeys.put(id, new ResourceFontKey(resource));
@@ -113,7 +123,8 @@ final class MinecraftUiResources2612 implements UiResourceResolver, AutoCloseabl
     synchronized UiTextMetrics textMetrics() {
         requireOpen();
         return UiTextMetrics.of((text, scale, fontId) -> {
-            var measured = textLayouts.measure(text, scale * MinecraftUiRuntime2612.UI_TEXT_SCALE, font(fontId));
+            float effectiveScale = (float) (scale * textScaleMultiplier.getAsDouble());
+            var measured = textLayouts.measure(text, effectiveScale, font(fontId));
             return new UiTextMetrics.Measurement(measured.width(), measured.height());
         });
     }

@@ -58,8 +58,9 @@ antialiasing policy remain application state.
 Returned font and atlas objects are borrowed from the runtime. Resource reload
 and `MinecraftUiRuntime2612.close()` release them. Every TTF atlas page is fixed
 at `1024 x 1024` pixels; `UiConfig` rejects any other dimensions. The default UI font rasterization is capped at
-`48` pixels per glyph with `4` pixels of SDF padding, and `UiConfig` rejects larger values. The configured glyph height
-includes the SDF padding on both sides. Atlas revisions keep image, descriptor, sampler, and Minecraft texture ownership
+`48` pixels per glyph with `4` additional pixels of SDF padding on each side, and `UiConfig` rejects larger values.
+The pixel height is passed directly to STB; padding expands the generated bitmap without reducing rasterization
+resolution or changing font metrics. Atlas revisions keep image, descriptor, sampler, and Minecraft texture ownership
 only while referenced; staging buffers and retired
 revisions are released after the frame command buffer has submitted, rather
 than accumulating until runtime shutdown.
@@ -69,6 +70,11 @@ real glyphs written by all runtime-owned fonts in one Minecraft frame.
 Unsupported code points and supported glyphs deferred by this budget use the
 built-in hollow-box glyph. Layouts containing deferred glyphs retry on later
 frames instead of caching the placeholder permanently.
+
+`MinecraftUiRuntime2612.setUiTextScaleMultiplier(float)` applies an additional
+positive multiplier on top of `UI_TEXT_SCALE`. It updates text measurement and
+rendering for both existing and newly created UI scenes, regardless of whether
+the runtime uses a resource-pack font or a custom filesystem font.
 
 Each UI runtime uses one dedicated daemon thread for STB glyph rasterization.
 Rasterized pixels enter a shared queue; atlas mutation and GPU upload are drained
@@ -95,7 +101,7 @@ glow-mask behavior.
 
 ## Local release publishing
 
-The current release uses LuminGraphics-MC `1.2.4`, LuminGraphics `1.2.4`, and
+The current development version uses LuminGraphics-MC `1.2.5-SNAPSHOT`, LuminGraphics `1.2.5-SNAPSHOT`, and
 PrismRHI `0.2.2`. Publish PrismRHI first, then LuminGraphics, then these
 matching loader artifacts:
 

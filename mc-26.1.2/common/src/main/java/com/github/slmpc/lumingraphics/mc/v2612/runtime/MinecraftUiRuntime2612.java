@@ -19,12 +19,10 @@ import com.github.slmpc.lumingraphics.ui.text.UiTextMetrics;
 import com.github.slmpc.lumingraphics.ui.tree.UiTree;
 import com.github.slmpc.prismrhi.format.PRhiFormat;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.BiConsumer;
 import net.minecraft.client.Minecraft;
@@ -36,7 +34,7 @@ import org.jspecify.annotations.Nullable;
 /** Minecraft 26.1.2 拥有的 Lumin {@link UiTree} 运行时。 */
 public final class MinecraftUiRuntime2612 implements AutoCloseable {
     public enum TextureFilter { NEAREST, LINEAR }
-    static final float UI_TEXT_SCALE = 0.36f;
+    static final float UI_TEXT_SCALE = 0.30f;
     static final int MAX_FONT_PIXEL_HEIGHT = 48;
     static final int MAX_FONT_SDF_PADDING = 4;
     static final int FONT_ATLAS_WIDTH = 1024;
@@ -82,12 +80,13 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
     private final MinecraftGraphicsRuntime2612 graphics;
     private final Map<String, Identifier> fontResources;
     private String defaultFontId;
-    private final Set<UiScene> scenes = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Map<UiScene, TtfTextRenderer> scenes = new IdentityHashMap<>();
     private DefaultRenderResources renderResources;
     private MinecraftUiResources2612 uiResources;
     private MinecraftBlurService2612 blurService;
     private MinecraftFontAdapter2612 minecraftFont;
     private int fontGlyphsPerFrame = Integer.MAX_VALUE;
+    private volatile float uiTextScaleMultiplier = 1.0f;
     private boolean closed;
 
     private MinecraftUiRuntime2612(Minecraft client, UiConfig config,
@@ -159,6 +158,14 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
         }
     }
 
+    /** 在 Minecraft UI 基准字体倍率上追加应用层倍率，并同步更新已创建的 scene。 */
+    public synchronized void setUiTextScaleMultiplier(float multiplier) {
+        requireOpen();
+        float effectiveScale = effectiveUiTextScale(multiplier);
+        for (TtfTextRenderer text : scenes.values()) text.setScaleMultiplier(effectiveScale);
+        uiTextScaleMultiplier = multiplier;
+    }
+
     /** 注册一个由 Minecraft ResourceManager 读取的 TTF/OTF 字体。 */
     public synchronized void registerFont(String id, Identifier resource) {
         requireOpen();
@@ -222,11 +229,11 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
                 RendererSet.create(renderResources, config.rendererCapacity()), config.quadtreeThreshold(),
                 Render2DScissorMapper.topLeft(graphics::projectionMetrics));
         SchedulerTextBatchSink sink = new SchedulerTextBatchSink(uiResources);
-        TtfTextRenderer text = new TtfTextRenderer(UI_TEXT_SCALE, sink);
+        TtfTextRenderer text = new TtfTextRenderer(effectiveUiTextScale(uiTextScaleMultiplier), sink);
         try {
             UiScene scene = new UiScene(scheduler, Objects.requireNonNull(theme, "theme"),
                     new LuminUiRenderer(text, sink, uiResources), scenes::remove);
-            scenes.add(scene);
+            scenes.put(scene, text);
             return scene;
         } catch (RuntimeException failure) {
             RuntimeException cleanup = GraphicsResourceCloser2612.closeReverse(text, scheduler);
@@ -240,7 +247,7 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
     /** 在 Minecraft 主 RenderTarget 上执行一次完整 scene 帧。 */
     public synchronized void render(UiScene scene, Consumer<UiScene> submissions) {
         requireOpen();
-        if (!scenes.contains(Objects.requireNonNull(scene, "scene"))) {
+        if (!scenes.containsKey(Objects.requireNonNull(scene, "scene"))) {
             throw new IllegalArgumentException("UI scene is not owned by this Minecraft runtime");
         }
         Objects.requireNonNull(submissions, "submissions");
@@ -287,7 +294,7 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
     /** 资源包重载后关闭旧字体 atlas 和借用纹理，下次访问按新资源重建。 */
     public synchronized void onResourceReload() {
         if (closed || uiResources == null) return;
-        for (UiScene scene : scenes) if (scene.frameActive()) scene.abortFrame();
+        for (UiScene scene : scenes.keySet()) if (scene.frameActive()) scene.abortFrame();
         uiResources.invalidate();
     }
 
@@ -296,7 +303,7 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
         if (closed) return;
         closed = true;
         RuntimeException failure = GraphicsResourceCloser2612.closeReverse(
-                scenes.toArray(AutoCloseable[]::new));
+                scenes.keySet().toArray(AutoCloseable[]::new));
         scenes.clear();
         failure = GraphicsResourceCloser2612.merge(failure,
                 GraphicsResourceCloser2612.closeReverse(blurService, uiResources, renderResources, graphics));
@@ -315,7 +322,8 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
         PRhiFormat depth = target.depthView().map(view -> view.format()).orElse(PRhiFormat.UNDEFINED);
         renderResources = new DefaultRenderResources(graphics.device(), target.colorView().format(), depth);
         try {
-            uiResources = new MinecraftUiResources2612(client, graphics, renderResources, config);
+            uiResources = new MinecraftUiResources2612(client, graphics, renderResources, config,
+                    () -> UI_TEXT_SCALE * uiTextScaleMultiplier);
             uiResources.beginFontFrame(graphics.activeFrameId(), fontGlyphsPerFrame);
             fontResources.forEach(uiResources::registerResourceFont);
             uiResources.useDefaultFont(defaultFontId);
@@ -330,6 +338,17 @@ public final class MinecraftUiRuntime2612 implements AutoCloseable {
     private void requireOpen() {
         if (closed) throw new IllegalStateException("Minecraft UI runtime is closed");
         graphics.luminContext().requireRenderThread();
+    }
+
+    static float effectiveUiTextScale(float multiplier) {
+        if (!Float.isFinite(multiplier) || multiplier <= 0.0f) {
+            throw new IllegalArgumentException("UI text scale multiplier must be positive and finite");
+        }
+        float effectiveScale = UI_TEXT_SCALE * multiplier;
+        if (!Float.isFinite(effectiveScale) || effectiveScale <= 0.0f) {
+            throw new IllegalArgumentException("Effective UI text scale must be positive and finite");
+        }
+        return effectiveScale;
     }
 
     private static synchronized void clearCurrent(MinecraftUiRuntime2612 runtime) {
