@@ -7,8 +7,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 final class ArtifactCatalog {
-    static final String LUMIN_VERSION = "1.2.4-SNAPSHOT";
-    static final String MC_VERSION = "1.2.4-SNAPSHOT";
+    static final String LUMIN_VERSION = "1.2.4";
+    static final String MC_VERSION = "1.2.4";
     static final String PRISM_VERSION = "0.2.2";
     static final List<Coordinate> EXPECTED = List.of(
             new Coordinate("com.github.slmpc.lumingraphics.mc", "bridge-contract", MC_VERSION),

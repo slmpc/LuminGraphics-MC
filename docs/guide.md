@@ -95,7 +95,7 @@ glow-mask behavior.
 
 ## Local release publishing
 
-The current development version uses LuminGraphics-MC `1.2.4-SNAPSHOT`, LuminGraphics `1.2.4-SNAPSHOT`, and
+The current release uses LuminGraphics-MC `1.2.4`, LuminGraphics `1.2.4`, and
 PrismRHI `0.2.2`. Publish PrismRHI first, then LuminGraphics, then these
 matching loader artifacts:
 
