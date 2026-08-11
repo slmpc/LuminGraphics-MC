@@ -2,6 +2,11 @@
 java = "25"
 loom = "1.15.5"
 moddev = "2.0.140"
+minecraft-v1211 = "1.21.1"
+fabric-loader-v1211 = "0.19.2"
+fabric-api-v1211 = "0.116.15+1.21.1"
+neoform-v1211 = "1.21.1-20240808.144430"
+neoforge-v1211 = "21.1.248"
 minecraft-v2612 = "26.1.2"
 fabric-loader-v2612 = "0.19.2"
 fabric-api-v2612 = "0.150.0+26.1.2"
@@ -14,6 +19,7 @@ neoform-v262 = "26.2-2"
 neoforge-v262 = "26.2.0.37-beta"
 lumin = "1.2.5"
 prism = "0.2.2"
+mixin = "0.8.7"
 junit = "5.13.4"
 junit-platform = "1.13.4"
 
@@ -21,12 +27,16 @@ junit-platform = "1.13.4"
 lumin-bom = { module = "com.github.slmpc.lumingraphics:lumin-graphics-bom", version.ref = "lumin" }
 lumin-core = { module = "com.github.slmpc.lumingraphics:lumin-graphics-core" }
 lumin-render = { module = "com.github.slmpc.lumingraphics:lumin-graphics-render" }
+minecraft-v1211 = { module = "com.mojang:minecraft", version.ref = "minecraft-v1211" }
+fabric-loader-v1211 = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader-v1211" }
+fabric-api-v1211 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api-v1211" }
 minecraft-v2612 = { module = "com.mojang:minecraft", version.ref = "minecraft-v2612" }
 fabric-loader-v2612 = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader-v2612" }
 fabric-api-v2612 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api-v2612" }
 minecraft-v262 = { module = "com.mojang:minecraft", version.ref = "minecraft-v262" }
 fabric-loader-v262 = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader-v262" }
 fabric-api-v262 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api-v262" }
+mixin = { module = "org.spongepowered:mixin", version.ref = "mixin" }
 junit = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 junit-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }
 

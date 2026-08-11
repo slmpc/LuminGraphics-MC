@@ -18,6 +18,8 @@ final class VariantJarVerifierTest {
     @Test
     void standardArtifactPathsUseNestedVersionAndLoaderDirectories() {
         for (VariantPath variant : List.of(
+                new VariantPath("fabric", "1.21.1"),
+                new VariantPath("neoforge", "1.21.1"),
                 new VariantPath("fabric", "26.1.2"),
                 new VariantPath("neoforge", "26.1.2"),
                 new VariantPath("fabric", "26.2"),

@@ -10,13 +10,13 @@ import java.io.File
 import java.net.URLClassLoader
 import java.util.zip.ZipFile
 
-apply(plugin = "java-library")
-apply(plugin = "net.fabricmc.fabric-loom")
-
 @Suppress("UNCHECKED_CAST")
 val minecraftLeafSpecs = gradle.extra["minecraftLeafSpecs"] as Map<String, Map<String, String?>>
 val moduleSpec = requireNotNull(minecraftLeafSpecs[path])
 fun Map<String, String?>.required(name: String): String = requireNotNull(this[name])
+
+apply(plugin = "java-library")
+apply(plugin = if (moduleSpec.required("version") == "1.21.1") "fabric-loom" else "net.fabricmc.fabric-loom")
 
 val commonProject = project(moduleSpec.required("commonPath"))
 val catalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
@@ -25,11 +25,12 @@ val minecraftVersion = moduleSpec.required("version")
 val versionKey = minecraftVersion.replace(".", "")
 val expectedLoader = catalog.findVersion("fabric-loader-v$versionKey").get().requiredVersion
 val expectedApi = catalog.findVersion("fabric-api-v$versionKey").get().requiredVersion
-val mixinName = if (minecraftVersion == "26.1.2") {
-    "lumin_graphics_mc_2612.mixins.json"
-} else {
-    "lumin-graphics-mc-262.mixins.json"
+val mixinName = when (minecraftVersion) {
+    "26.1.2" -> "lumin_graphics_mc_2612.mixins.json"
+    "26.2" -> "lumin-graphics-mc-262.mixins.json"
+    else -> "lumin_graphics_mc_$versionKey.mixins.json"
 }
+val fabricMixinName = if (minecraftVersion == "1.21.1") "lumin_graphics_mc_1211.fabric.mixins.json" else null
 val accessWidenerName = "lumin_graphics_mc_$versionKey.accesswidener"
 val luminVersion = catalog.findVersion("lumin").get().requiredVersion
 val packagedLibraries = listOf(
@@ -55,6 +56,7 @@ val luminGraphicsShadow by configurations.creating {
 
 dependencies {
     add("compileOnly", commonProject)
+    add("compileOnly", catalog.findLibrary("mixin").get())
     add("compileOnly", "com.github.slmpc.prismrhi:prism-rhi-backend-opengl41:$prismVersion")
     add("compileOnly", "com.github.slmpc.prismrhi:prism-rhi-backend-opengl46:$prismVersion")
     add(luminGraphicsShadow.name, project(":bridge-contract")) { isTransitive = false }
@@ -112,30 +114,39 @@ tasks.register("verifyFabricWiring") {
         if (metadata["environment"] != "client" || entrypoints?.get("client") != listOf(expectedEntrypoint)) {
             throw GradleException("Fabric client entrypoint mismatch for $minecraftVersion")
         }
-        if (metadata["accessWidener"] != awFile.name || metadata["mixins"] != listOf(mixinName)) {
+        val expectedMixins = listOfNotNull(mixinName, fabricMixinName)
+        if (metadata["accessWidener"] != awFile.name || metadata["mixins"] != expectedMixins) {
             throw GradleException("Fabric AW/mixin registration mismatch for $minecraftVersion")
         }
-        val expectedDependencies = mapOf(
+        val expectedDependencies = mutableMapOf(
             "fabricloader" to "=$expectedLoader",
             "minecraft" to "=$minecraftVersion",
             "java" to ">=25",
-            "fabric-api" to "=$expectedApi",
         )
+        if (minecraftVersion != "1.21.1") {
+            expectedDependencies["fabric-api"] = "=$expectedApi"
+        }
         if (metadata["depends"] != expectedDependencies) {
             throw GradleException("Fabric dependency constraints mismatch: ${metadata["depends"]}")
         }
         val implementationDependencies = configurations.getByName("implementation").dependencies
-        val loaderPinned = implementationDependencies.any {
+        val loaderDependencies = if (minecraftVersion == "1.21.1") {
+            configurations.getByName("modImplementation").dependencies
+        } else {
+            implementationDependencies
+        }
+        val loaderPinned = loaderDependencies.any {
             it.group == "net.fabricmc" && it.name == "fabric-loader" && it.version == expectedLoader
         }
         val apiPinned = implementationDependencies.any {
             it.group == "net.fabricmc.fabric-api" && it.name == "fabric-api" && it.version == expectedApi
         }
-        if (!loaderPinned || !apiPinned) {
+        if (!loaderPinned || apiPinned != (minecraftVersion != "1.21.1")) {
             throw GradleException("Fabric dependency pins mismatch for $minecraftVersion")
         }
         val awText = awFile.readText()
-        if (!awText.startsWith("accessWidener v2 official")) {
+        val expectedNamespace = if (minecraftVersion == "1.21.1") "named" else "official"
+        if (!awText.startsWith("accessWidener v2 $expectedNamespace")) {
             throw GradleException("Access Widener namespace/header mismatch for $minecraftVersion")
         }
         if (awText.contains(if (minecraftVersion == "26.1.2") "FrameBufferCache" else "TextureFormat")) {
@@ -156,19 +167,20 @@ val verifyFabricArtifact = tasks.register("verifyFabricArtifact") {
         val jarFile = tasks.named<Jar>("jar").get().archiveFile.get().asFile
         val entrypointName = "com.github.slmpc.lumingraphics.mc.fabric.v$versionKey.LuminGraphicsFabricClient"
         val entrypointPath = entrypointName.replace('.', '/') + ".class"
-        val commonMarker = if (minecraftVersion == "26.1.2") {
-            "com/github/slmpc/lumingraphics/mc/v2612/bridge/Blaze3DBridge2612.class"
-        } else {
-            "com/github/slmpc/lumingraphics/mc/v262/bridge/Blaze3DBridge262.class"
+        val commonMarker = when (minecraftVersion) {
+            "1.21.1" -> "com/github/slmpc/lumingraphics/mc/v1211/bridge/GlStateManagerBridge1211.class"
+            "26.1.2" -> "com/github/slmpc/lumingraphics/mc/v2612/bridge/Blaze3DBridge2612.class"
+            "26.2" -> "com/github/slmpc/lumingraphics/mc/v262/bridge/Blaze3DBridge262.class"
+            else -> throw GradleException("Unsupported Minecraft version: $minecraftVersion")
         }
-        val oppositeMarker = if (minecraftVersion == "26.1.2") "/v262/" else "/v2612/"
+        val ownVersionPackage = "/v$versionKey/"
         ZipFile(jarFile).use { zip ->
             val names = zip.entries().asSequence().map { it.name }.toList()
-            listOf(entrypointPath, "fabric.mod.json", accessWidenerName, mixinName, commonMarker).forEach { required ->
+            listOfNotNull(entrypointPath, "fabric.mod.json", accessWidenerName, mixinName, fabricMixinName, commonMarker).forEach { required ->
                 if (required !in names) throw GradleException("Fabric artifact misses $required")
             }
-            if (names.any { oppositeMarker in it }) {
-                throw GradleException("Fabric artifact contains opposite-version classes: $oppositeMarker")
+            if (names.any { name -> "/v" in name && name.contains("/mc/") && ownVersionPackage !in name }) {
+                throw GradleException("Fabric artifact contains classes from another Minecraft version")
             }
             @Suppress("UNCHECKED_CAST")
             val metadata = JsonSlurper().parse(zip.getInputStream(zip.getEntry("fabric.mod.json"))) as Map<String, Any?>

@@ -28,12 +28,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 final class ArchitectureGuardTest {
     private static final List<String> EXPECTED_PRODUCTION_MODULE_ROOTS = List.of(
             "bridge-contract",
+            "mc-1.21.1/common", "mc-1.21.1/fabric", "mc-1.21.1/neoforge",
             "mc-26.1.2/common", "mc-26.1.2/fabric", "mc-26.1.2/neoforge",
             "mc-26.2/common", "mc-26.2/fabric", "mc-26.2/neoforge");
     private static final List<String> EXPECTED_MINECRAFT_LEAF_ROOTS = List.of(
+            "mc-1.21.1/common", "mc-1.21.1/fabric", "mc-1.21.1/neoforge",
             "mc-26.1.2/common", "mc-26.1.2/fabric", "mc-26.1.2/neoforge",
             "mc-26.2/common", "mc-26.2/fabric", "mc-26.2/neoforge");
     private static final List<String> EXPECTED_LOADER_ROOTS = List.of(
+            "mc-1.21.1/fabric", "mc-1.21.1/neoforge",
             "mc-26.1.2/fabric", "mc-26.1.2/neoforge", "mc-26.2/fabric", "mc-26.2/neoforge");
     private static final Set<String> REFLECTION_CALLS = Set.of(
             "Class.forName", "getDeclaredField", "getDeclaredFields", "getDeclaredMethod", "getDeclaredMethods",
@@ -65,7 +68,7 @@ final class ArchitectureGuardTest {
                 }
             }
         }
-        assertTrue(sources.size() > 40 && classCount > 40 && jarCount == 4 && jarEntries > 40,
+        assertTrue(sources.size() > 40 && classCount > 40 && jarCount == 6 && jarEntries > 40,
                 "architecture source/class/JAR inspection must be nonzero: sources=" + sources.size()
                         + " classes=" + classCount + " jars=" + jarCount + " entries=" + jarEntries);
         System.out.printf("ARCH_MC_ROOTS production=%s classes=%s loaders=%s%n",
@@ -138,7 +141,10 @@ final class ArchitectureGuardTest {
                 entries++;
                 reject(entry.getName().startsWith("META-INF/services/"), jar + "!" + entry.getName(), "service descriptor");
                 String name = entry.getName();
+                boolean v1211Jar = jar.toString().contains("1.21.1");
                 boolean v2612Jar = jar.toString().contains("26.1.2");
+                reject(v1211Jar && (name.contains("/v2612/") || name.contains("/v262/")),
+                        jar + "!" + name, "newer-version class in 1.21.1 JAR");
                 reject(v2612Jar && name.contains("/v262/"), jar + "!" + name, "26.2 class in 26.1.2 JAR");
                 reject(!v2612Jar && jar.toString().contains("26.2") && name.contains("/v2612/"),
                         jar + "!" + name, "26.1.2 class in 26.2 JAR");
@@ -190,8 +196,11 @@ final class ArchitectureGuardTest {
     private static void inspectConstantPool(String path, byte[] bytes) throws IOException {
         Set<String> utf8 = constantPoolUtf8(bytes);
         for (String symbol : REFLECTION_CALLS) reject(utf8.contains(symbol), path, "reflection constant " + symbol);
+        boolean v1211 = path.contains("mc-1.21.1");
         boolean v262 = path.contains("mc-26.2");
         boolean v2612 = path.contains("mc-26.1.2");
+        reject(v1211 && utf8.stream().anyMatch(value -> value.contains("/v2612/") || value.contains("/v262/")),
+                path, "newer-version class constant in 1.21.1");
         reject(v262 && utf8.stream().anyMatch(value -> value.contains("/v2612/")), path, "26.1.2 class constant in 26.2");
         reject(v2612 && utf8.stream().anyMatch(value -> value.contains("/v262/")), path, "26.2 class constant in 26.1.2");
     }

@@ -20,17 +20,17 @@ fun Map<String, String?>.required(name: String): String = requireNotNull(this[na
 val commonProject = project(moduleSpec.required("commonPath"))
 evaluationDependsOn(commonProject.path)
 val minecraftVersion = moduleSpec.required("version")
-val versionKey = if (minecraftVersion == "26.1.2") "2612" else "262"
+val versionKey = minecraftVersion.replace(".", "")
 val packageKey = "v$versionKey"
 val catalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
 val expectedNeoForgeVersion = catalog.findVersion("neoforge-v$versionKey").get().requiredVersion
 val expectedNeoFormVersion = catalog.findVersion("neoform-v$versionKey").get().requiredVersion
 val entrypointClass =
     "com.github.slmpc.lumingraphics.mc.$packageKey.neoforge.LuminGraphicsNeoForge$versionKey"
-val mixinConfigName = if (minecraftVersion == "26.1.2") {
-    "lumin_graphics_mc_2612.mixins.json"
-} else {
-    "lumin-graphics-mc-262.mixins.json"
+val mixinConfigName = when (minecraftVersion) {
+    "26.1.2" -> "lumin_graphics_mc_2612.mixins.json"
+    "26.2" -> "lumin-graphics-mc-262.mixins.json"
+    else -> "lumin_graphics_mc_$versionKey.mixins.json"
 }
 val accessTransformer = layout.projectDirectory.file("src/main/resources/META-INF/accesstransformer.cfg")
 val luminVersion = catalog.findVersion("lumin").get().requiredVersion
@@ -96,16 +96,16 @@ tasks.named("jarJar") {
     enabled = false
 }
 
-val expectedAccessTargets = if (minecraftVersion == "26.1.2") {
-    mapOf(
+val expectedAccessTargets = when (minecraftVersion) {
+    "1.21.1" -> emptyMap()
+    "26.1.2" -> mapOf(
         "com.mojang.blaze3d.opengl.GlTexture" to
             "(ILjava/lang/String;Lcom/mojang/blaze3d/textures/TextureFormat;IIIII)V",
         "com.mojang.blaze3d.opengl.GlTextureView" to "(Lcom/mojang/blaze3d/opengl/GlTexture;II)V",
         "com.mojang.blaze3d.opengl.GlBuffer" to
             "(Ljava/util/function/Supplier;Lcom/mojang/blaze3d/opengl/DirectStateAccess;IJILjava/nio/ByteBuffer;)V",
     )
-} else {
-    mapOf(
+    "26.2" -> mapOf(
         "com.mojang.blaze3d.opengl.GlTexture" to
             "(ILjava/lang/String;Lcom/mojang/blaze3d/GpuFormat;IIIIILcom/mojang/blaze3d/opengl/FrameBufferCache;)V",
         "com.mojang.blaze3d.opengl.GlTextureView" to
@@ -114,6 +114,7 @@ val expectedAccessTargets = if (minecraftVersion == "26.1.2") {
             "(Lcom/mojang/blaze3d/opengl/DirectStateAccess;IJIZ)V",
         "com.mojang.blaze3d.opengl.GlProgram" to "(ILjava/lang/String;)V",
     )
+    else -> throw GradleException("Unsupported Minecraft version: $minecraftVersion")
 }
 
 val verifyNeoForgeContract = tasks.register("verifyNeoForgeContract") {
@@ -133,10 +134,11 @@ val verifyNeoForgeContract = tasks.register("verifyNeoForgeContract") {
             throw GradleException("Missing NeoForge $minecraftVersion client entrypoint: $source")
         }
         val sourceText = source.readText()
-        val lifecycleContracts = if (minecraftVersion == "26.1.2") {
-            listOf("MinecraftUiRuntime2612.bindCurrent", "runtime.close()")
-        } else {
-            listOf("RenderSystem.assertOnRenderThread()", "GL.getCapabilities()", "token.invalidate()")
+        val lifecycleContracts = when (minecraftVersion) {
+            "1.21.1" -> listOf("MinecraftUiRuntime1211.bindCurrent")
+            "26.1.2" -> listOf("MinecraftUiRuntime2612.bindCurrent", "runtime.close()")
+            "26.2" -> listOf("RenderSystem.assertOnRenderThread()", "GL.getCapabilities()", "token.invalidate()")
+            else -> throw GradleException("Unsupported Minecraft version: $minecraftVersion")
         }
         (listOf("@Mod(value = LuminGraphicsNeoForge$versionKey.MOD_ID, dist = Dist.CLIENT)") + lifecycleContracts)
             .forEach { contract ->
@@ -155,7 +157,7 @@ val verifyNeoForgeContract = tasks.register("verifyNeoForgeContract") {
         val metadataText = metadata.readText()
         val requiredMetadata = listOf(
             "modLoader=\"javafml\"",
-            "loaderVersion=\"[11,)\"",
+            "loaderVersion=\"${if (minecraftVersion == "1.21.1") "[4,)" else "[11,)"}\"",
             "modId=\"lumin_graphics_mc\"",
             "version=\"${project.version}+mc$minecraftVersion\"",
             "config=\"$mixinConfigName\"",
@@ -198,7 +200,9 @@ val verifyNeoForgeContract = tasks.register("verifyNeoForgeContract") {
         }
 
         val patchedJar = file("build/moddev/artifacts/minecraft-patched-$expectedNeoForgeVersion.jar")
-        if (!patchedJar.isFile) throw GradleException("Missing matching patched Minecraft JAR: $patchedJar")
+        if (expectedAccessTargets.isNotEmpty() && !patchedJar.isFile) {
+            throw GradleException("Missing matching patched Minecraft JAR: $patchedJar")
+        }
         val javap = File(System.getProperty("java.home"), "bin/javap.exe")
         expectedAccessTargets.forEach { (className, descriptor) ->
             val process = ProcessBuilder(
@@ -236,10 +240,11 @@ val verifyNeoForgeContract = tasks.register("verifyNeoForgeContract") {
         ).use { runtimeLoader ->
             Class.forName(entrypointClass, false, runtimeLoader)
         }
-        val commonClassSuffix = if (minecraftVersion == "26.1.2") {
-            "com/github/slmpc/lumingraphics/mc/v2612/bridge/Blaze3DBridge2612.class"
-        } else {
-            "com/github/slmpc/lumingraphics/mc/v262/bridge/Blaze3DBridge262.class"
+        val commonClassSuffix = when (minecraftVersion) {
+            "1.21.1" -> "com/github/slmpc/lumingraphics/mc/v1211/bridge/GlStateManagerBridge1211.class"
+            "26.1.2" -> "com/github/slmpc/lumingraphics/mc/v2612/bridge/Blaze3DBridge2612.class"
+            "26.2" -> "com/github/slmpc/lumingraphics/mc/v262/bridge/Blaze3DBridge262.class"
+            else -> throw GradleException("Unsupported Minecraft version: $minecraftVersion")
         }
         val commonClass = commonProject.layout.buildDirectory.file("classes/java/main/$commonClassSuffix").get().asFile
         if (!commonClass.isFile) throw GradleException("Matching common output was not compiled: $commonClass")
@@ -250,9 +255,10 @@ val verifyNeoForgeContract = tasks.register("verifyNeoForgeContract") {
         if (commonNeoForgeImports.isNotEmpty()) {
             throw GradleException("NeoForge types leaked outside loader module: $commonNeoForgeImports")
         }
-        val otherVersion = if (minecraftVersion == "26.1.2") "v262" else "v2612"
+        val ownVersionPackage = "lumingraphics.mc.v$versionKey"
         val crossVersionSources = fileTree("src/main/java") { include("**/*.java") }.files.filter {
-            it.readText().contains("lumingraphics.mc.$otherVersion")
+            val text = it.readText()
+            text.contains("lumingraphics.mc.v") && !text.contains(ownVersionPackage)
         }
         if (crossVersionSources.isNotEmpty()) {
             throw GradleException("Cross-version accessor leakage in ${project.path}: $crossVersionSources")
@@ -272,9 +278,15 @@ val verifyNeoForgeContract = tasks.register("verifyNeoForgeContract") {
                     throw GradleException("NeoForge $minecraftVersion JAR is missing required entry: $entry")
                 }
             }
-            val forbiddenPrefix = "com/github/slmpc/lumingraphics/mc/$otherVersion/"
-            if (entries.any { it.startsWith(forbiddenPrefix) }) {
-                throw GradleException("NeoForge $minecraftVersion JAR contains cross-version classes: $forbiddenPrefix")
+            val ownVersionPrefix = "com/github/slmpc/lumingraphics/mc/v$versionKey/"
+            if (entries.any { entry -> entry.startsWith("com/github/slmpc/lumingraphics/mc/v") && !entry.startsWith(ownVersionPrefix) }) {
+                throw GradleException("NeoForge $minecraftVersion JAR contains cross-version classes")
+            }
+            if (minecraftVersion == "1.21.1" && entries.any { entry ->
+                    entry.endsWith("/GlContextVersionMixin1211.class") ||
+                        entry == "lumin_graphics_mc_1211.fabric.mixins.json"
+                }) {
+                throw GradleException("NeoForge 1.21.1 JAR must not modify the EarlyWindow OpenGL context")
             }
         }
         logger.lifecycle(

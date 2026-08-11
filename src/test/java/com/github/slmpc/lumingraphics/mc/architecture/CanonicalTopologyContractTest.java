@@ -14,11 +14,12 @@ final class CanonicalTopologyContractTest {
     void settingsOwnedImmutableSpecsDriveProjectsAndCommonArchives() throws IOException {
         String settings = Files.readString(Path.of("settings.gradle.kts"));
         String rootBuild = Files.readString(Path.of("build.gradle.kts"));
+        String common1211 = Files.readString(Path.of("mc-1.21.1/common/build.gradle.kts"));
         String common2612 = Files.readString(Path.of("mc-26.1.2/common/build.gradle.kts"));
         String common262 = Files.readString(Path.of("mc-26.2/common/build.gradle.kts"));
 
         assertTrue(settings.contains("val minecraftLeafSpecs: Map<String, Map<String, String?>> = mapOf("));
-        assertEquals(6, occurrences(settings, "\"projectPath\" to"), "canonical map must define exactly six leaves");
+        assertEquals(9, occurrences(settings, "\"projectPath\" to"), "canonical map must define exactly nine leaves");
         assertTrue(settings.contains("minecraftLeafSpecs.forEach { (path, spec) ->"));
         assertTrue(settings.contains("include(path)"));
         assertTrue(settings.contains("project(path).projectDir = file(requireNotNull(spec[\"physicalDir\"]))"));
@@ -29,6 +30,7 @@ final class CanonicalTopologyContractTest {
         assertFalse(rootBuild.contains("val minecraftLeafSpecs = mapOf("),
                 "build.gradle.kts must consume the settings-owned map instead of defining a second map");
 
+        assertCommonArchiveLookup(common1211);
         assertCommonArchiveLookup(common2612);
         assertCommonArchiveLookup(common262);
     }

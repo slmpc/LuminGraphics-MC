@@ -277,7 +277,7 @@ gradle.allprojects {
 
 tasks.register<JavaExec>("verifyVariantJars") {
     group = "verification"
-    description = "Recursively verifies the four self-contained loader artifacts and their resolved provenance."
+    description = "Recursively verifies the six self-contained loader artifacts and their resolved provenance."
     dependsOn(tasks.named("classes"))
     loaderVariants.forEach { variant -> dependsOn("$variant:jar") }
     classpath = sourceSets.main.get().runtimeClasspath
@@ -299,7 +299,7 @@ tasks.register<JavaExec>("verifyVariantJars") {
 
 tasks.register("buildAllVariants") {
     group = "build"
-    description = "Builds and verifies all six modules and four final dependency-mod artifacts."
+    description = "Builds and verifies all nine modules and six final dependency-mod artifacts."
     minecraftModules.forEach { module -> dependsOn("${module.required("projectPath")}:check") }
     loaderVariants.forEach { variant ->
         dependsOn("$variant:clean", "$variant:build")

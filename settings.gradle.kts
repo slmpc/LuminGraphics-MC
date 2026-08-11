@@ -33,6 +33,21 @@ rootProject.name = "LuminGraphics-MC"
 include(":bridge-contract")
 
 val minecraftLeafSpecs: Map<String, Map<String, String?>> = mapOf(
+    ":mc-1.21.1:common" to mapOf(
+        "projectPath" to ":mc-1.21.1:common", "stableId" to "mc-1.21.1-common", "version" to "1.21.1", "role" to "common",
+        "physicalDir" to "mc-1.21.1/common", "commonPath" to ":mc-1.21.1:common",
+        "archiveBaseName" to "mc-1.21.1-common", "negativeMode" to null,
+    ),
+    ":mc-1.21.1:fabric" to mapOf(
+        "projectPath" to ":mc-1.21.1:fabric", "stableId" to "mc-1.21.1-fabric", "version" to "1.21.1", "role" to "fabric",
+        "physicalDir" to "mc-1.21.1/fabric", "commonPath" to ":mc-1.21.1:common",
+        "archiveBaseName" to "lumin-graphics-mc-fabric-1.21.1", "negativeMode" to null,
+    ),
+    ":mc-1.21.1:neoforge" to mapOf(
+        "projectPath" to ":mc-1.21.1:neoforge", "stableId" to "mc-1.21.1-neoforge", "version" to "1.21.1", "role" to "neoforge",
+        "physicalDir" to "mc-1.21.1/neoforge", "commonPath" to ":mc-1.21.1:common",
+        "archiveBaseName" to "lumin-graphics-mc-neoforge-1.21.1", "negativeMode" to null,
+    ),
     ":mc-26.1.2:common" to mapOf(
         "projectPath" to ":mc-26.1.2:common", "stableId" to "mc-26.1.2-common", "version" to "26.1.2", "role" to "common",
         "physicalDir" to "mc-26.1.2/common", "commonPath" to ":mc-26.1.2:common",

@@ -41,11 +41,13 @@ public final class VariantJarVerifier {
         for (Variant variant : variants(root, override)) {
             verifyVariant(variant, artifacts);
         }
-        System.out.println("VARIANT_MATRIX_OK variants=4 shadowedArtifacts=36 version=1.2.5");
+        System.out.println("VARIANT_MATRIX_OK variants=6 shadowedArtifacts=54 version=1.2.5");
     }
 
     private static List<Variant> variants(Path root, Path override) {
         return List.of(
+                variant(root, override, "fabric", "1.21.1", "1211", "v1211"),
+                variant(root, override, "neoforge", "1.21.1", "1211", "v1211"),
                 variant(root, override, "fabric", "26.1.2", "2612", "v2612"),
                 variant(root, override, "neoforge", "26.1.2", "2612", "v2612"),
                 variant(root, override, "fabric", "26.2", "262", "v262"),
@@ -59,8 +61,14 @@ public final class VariantJarVerifier {
         String entrypoint = loader.equals("fabric")
                 ? "com/github/slmpc/lumingraphics/mc/fabric/v" + key + "/LuminGraphicsFabricClient.class"
                 : "com/github/slmpc/lumingraphics/mc/" + packageKey + "/neoforge/LuminGraphicsNeoForge" + key + ".class";
-        String common = "com/github/slmpc/lumingraphics/mc/" + packageKey + "/bridge/Blaze3DBridge" + key + ".class";
-        String mixin = minecraft.equals("26.1.2") ? "lumin_graphics_mc_2612.mixins.json" : "lumin-graphics-mc-262.mixins.json";
+        String common = minecraft.equals("1.21.1")
+                ? "com/github/slmpc/lumingraphics/mc/v1211/bridge/GlStateManagerBridge1211.class"
+                : "com/github/slmpc/lumingraphics/mc/" + packageKey + "/bridge/Blaze3DBridge" + key + ".class";
+        String mixin = switch (minecraft) {
+            case "1.21.1" -> "lumin_graphics_mc_1211.mixins.json";
+            case "26.1.2" -> "lumin_graphics_mc_2612.mixins.json";
+            default -> "lumin-graphics-mc-262.mixins.json";
+        };
         return new Variant(loader, minecraft, artifact, entrypoint, common, mixin);
     }
 
@@ -92,7 +100,7 @@ public final class VariantJarVerifier {
         if (shaders == 0 || classes == 0) {
             throw new IOException("Required Lumin/Prism payload is incomplete in " + variant.path());
         }
-        System.out.printf("VARIANT_OK loader=%s minecraft=%s file=%s bytes=%d sha256=%s shadowed=8 classes=%d shaders=%d%n",
+        System.out.printf("VARIANT_OK loader=%s minecraft=%s file=%s bytes=%d sha256=%s shadowed=9 classes=%d shaders=%d%n",
                 variant.loader(), variant.minecraft(), variant.path(), outerBytes.length,
                 ArchiveContents.sha256(outerBytes), classes, shaders);
     }
@@ -106,8 +114,9 @@ public final class VariantJarVerifier {
     private static void requireEntries(ArchiveContents outer, Variant variant) throws IOException {
         List<String> required = new ArrayList<>(List.of(variant.entrypoint(), variant.commonBridge(), variant.mixin()));
         required.add("com/github/slmpc/lumingraphics/mc/bridge/BridgeResult.class");
-        if (variant.minecraft().equals("26.1.2")) {
-            required.add("com/github/slmpc/lumingraphics/mc/v2612/runtime/MinecraftGraphicsRuntime2612.class");
+        if (variant.minecraft().equals("1.21.1") || variant.minecraft().equals("26.1.2")) {
+            String key = variant.minecraft().equals("1.21.1") ? "1211" : "2612";
+            required.add("com/github/slmpc/lumingraphics/mc/v" + key + "/runtime/MinecraftGraphicsRuntime" + key + ".class");
         }
         if (variant.loader().equals("fabric")) {
             required.add("fabric.mod.json");
