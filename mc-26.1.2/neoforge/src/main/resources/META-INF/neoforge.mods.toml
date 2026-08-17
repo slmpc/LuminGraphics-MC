@@ -18,7 +18,7 @@ config="lumin_graphics_mc_2612.mixins.json"
 [[dependencies.lumin_graphics_mc]]
 modId="neoforge"
 type="required"
-versionRange="[26.1.2.76]"
+versionRange="[26.1.2.76,)"
 ordering="NONE"
 side="CLIENT"
 

@@ -17,7 +17,7 @@
   ],
   "accessWidener": "lumin_graphics_mc_1211.accesswidener",
   "depends": {
-    "fabricloader": "=0.19.2",
+    "fabricloader": ">=0.19.2",
     "minecraft": "=1.21.1",
     "java": ">=25"
   }

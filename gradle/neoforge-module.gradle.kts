@@ -161,7 +161,10 @@ val verifyNeoForgeContract = tasks.register("verifyNeoForgeContract") {
             "modId=\"lumin_graphics_mc\"",
             "version=\"${project.version}+mc$minecraftVersion\"",
             "config=\"$mixinConfigName\"",
-            "versionRange=\"[$expectedNeoForgeVersion]\"",
+            // The bridge is compiled against one NeoForge build but keeps working on later builds of the
+            // same game version, so the loader dependency is a lower bound; the pinned Minecraft range
+            // below is what actually confines the mod to this game version.
+            "versionRange=\"[$expectedNeoForgeVersion,)\"",
             "versionRange=\"[$minecraftVersion]\"",
             "side=\"CLIENT\"",
             "[features.lumin_graphics_mc]",
@@ -171,6 +174,11 @@ val verifyNeoForgeContract = tasks.register("verifyNeoForgeContract") {
             if (!metadataText.contains(value)) {
                 throw GradleException("NeoForge $minecraftVersion metadata is missing exact value: $value")
             }
+        }
+        if (metadataText.contains("versionRange=\"[$expectedNeoForgeVersion]\"")) {
+            throw GradleException(
+                "NeoForge $minecraftVersion pins a single loader build; use [$expectedNeoForgeVersion,) instead",
+            )
         }
 
         val mixinConfig = commonProject.file("src/main/resources/$mixinConfigName")

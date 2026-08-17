@@ -118,16 +118,23 @@ tasks.register("verifyFabricWiring") {
         if (metadata["accessWidener"] != awFile.name || metadata["mixins"] != expectedMixins) {
             throw GradleException("Fabric AW/mixin registration mismatch for $minecraftVersion")
         }
+        // Fabric Loader silently excludes a nested mod whose own dependencies cannot be satisfied, so an
+        // exact "=" pin on fabricloader/fabric-api makes the whole runtime disappear from the classpath as
+        // soon as the player updates either one, and the failure only surfaces as NoClassDefFoundError in
+        // the consuming mod. Both stay lower bounds. The game version is a genuine single-version binding
+        // and stays exact.
         val expectedDependencies = mutableMapOf(
-            "fabricloader" to "=$expectedLoader",
+            "fabricloader" to ">=$expectedLoader",
             "minecraft" to "=$minecraftVersion",
             "java" to ">=25",
         )
         if (minecraftVersion != "1.21.1") {
-            expectedDependencies["fabric-api"] = "=$expectedApi"
+            expectedDependencies["fabric-api"] = ">=$expectedApi"
         }
         if (metadata["depends"] != expectedDependencies) {
-            throw GradleException("Fabric dependency constraints mismatch: ${metadata["depends"]}")
+            throw GradleException(
+                "Fabric dependency constraints mismatch: expected $expectedDependencies, found ${metadata["depends"]}",
+            )
         }
         val implementationDependencies = configurations.getByName("implementation").dependencies
         val loaderDependencies = if (minecraftVersion == "1.21.1") {
